@@ -8,9 +8,67 @@
     <link rel="icon" href="/brand/benzolens-favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/brand/theme.css" />
     <title>BenzoLens — аналитика полей</title>
+    <style>
+      #panel-loading {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 16px;
+        background: var(--bg-app);
+        color: var(--fg-secondary);
+        font: 500 14px var(--font-ui);
+      }
+      #root:not(:empty) + #panel-loading {
+        display: none;
+      }
+      .panel-spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid var(--border);
+        border-top-color: var(--action);
+        border-radius: 50%;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .panel-spinner {
+          animation: panel-spin 850ms linear infinite;
+        }
+      }
+      @keyframes panel-spin {
+        to { transform: rotate(1turn); }
+      }
+    </style>
+    <script>
+      function showPanelLoadError() {
+        const status = document.getElementById('panel-loading');
+        if (status) status.textContent = 'Не удалось загрузить панель. Обновите страницу.';
+      }
+      // Vite выносит входной модуль в отдельный файл. Его сбой ловим до запуска приложения.
+      window.addEventListener('error', (event) => {
+        if (!(event.target instanceof HTMLScriptElement) || event.target.type !== 'module') return;
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', showPanelLoadError, { once: true });
+        } else {
+          showPanelLoadError();
+        }
+      }, true);
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="panel-loading" role="status">
+      <img src="/brand/benzolens-horizontal-primary.svg" alt="BenzoLens" width="160" height="48" />
+      <span class="panel-spinner" aria-hidden="true"></span>
+      <span>Загружаем панель…</span>
+    </div>
+    <script type="module">
+      import('/src/main.tsx')
+        .then(({ bootstrap }) => bootstrap())
+        .catch((error) => {
+          console.error(error);
+          showPanelLoadError();
+        });
+    </script>
   </body>
 </html>

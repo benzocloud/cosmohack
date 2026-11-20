@@ -74,12 +74,6 @@ const EVENTS: Record<string, { version: string; events: unknown[] }> = {
   'area-insufficient': { version: 'v-insufficient-1', events: eventsInsufficient.events },
 };
 
-const CONTOURS: Record<string, object> = {
-  ok: contoursOk,
-  empty: contoursEmpty,
-  failed: contoursFailed,
-};
-
 /** Стадии live-сценария: 4 стадии по 1.5 c → completed на 6-й секунде. */
 const LIVE_STAGE_MS = 1500;
 const LIVE_TOTAL_MS = LIVE_STAGE_MS * 4;
@@ -151,13 +145,11 @@ export const handlers: HttpHandler[] = [
     const url = new URL(request.url);
     // Переключение сценариев — query mock_case (dev-удобство поверх bbox)
     const mockCase = url.searchParams.get('mock_case') ?? url.searchParams.get('mockCase');
-    const scenario = mockCase === 'empty' || mockCase === 'failed' ? mockCase : 'ok';
-    const fixture = CONTOURS[scenario] as {
-      features?: Array<{ geometry?: GeoJSON.Polygon; properties?: { id?: string; name?: string } }>;
-    };
+    if (mockCase === 'failed') return HttpResponse.json(contoursFailed, { status: 500 });
+    const { features } = mockCase === 'empty' ? contoursEmpty : contoursOk;
     return HttpResponse.json({
       _synthetic: true,
-      contours: (fixture.features ?? []).map((feature) => ({
+      contours: features.map((feature) => ({
         id: feature.properties?.id,
         name: feature.properties?.name,
         geometry: feature.geometry,

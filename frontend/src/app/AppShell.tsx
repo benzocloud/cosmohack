@@ -79,7 +79,7 @@ function useSelectedResult(): ResultViewProps {
 
   return {
     area,
-    areaLoading: areaQuery.isPending && !area,
+    areaLoading: !!selectedAreaId && areaQuery.isPending && !area,
     areaError: areaQuery.error,
     result,
     onRetryArea: () => void areaQuery.refetch(),

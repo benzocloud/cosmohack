@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EMPTY, MAP_LABELS, SCAFFOLD } from '@/lib/labels';
 import { Info, LoaderCircle, Search } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 /**
  * Кнопка поиска контуров со состояниями плана §6.4:
@@ -26,13 +28,29 @@ export function ContoursButton({
   onDraw: () => void;
 }) {
   const status = error ? 'failed' : (result?.status ?? null);
-  const searchAreaTooLarge = isAppError(error) && error.code === 'limit_exceeded';
+  const errorCode = isAppError(error) ? error.code : undefined;
+  const searchAreaTooLarge = errorCode === 'limit_exceeded';
   const okResult = result?.status === 'ok' ? result : null;
-  const hasResult = status === 'ok' || status === 'empty' || status === 'failed';
+
+  useEffect(() => {
+    if (!error || searchAreaTooLarge || stale || loading) return;
+    const id = toast.error(
+      errorCode === 'source_unavailable' ? MAP_LABELS.sourceUnavailable : EMPTY.contoursFailed,
+      {
+        description: MAP_LABELS.retryHint,
+        closeButton: true,
+        duration: 7_000,
+        richColors: true,
+      },
+    );
+    return () => {
+      toast.dismiss(id);
+    };
+  }, [error, errorCode, searchAreaTooLarge, stale, loading]);
 
   const label = loading
     ? MAP_LABELS.searching
-    : stale && hasResult
+    : stale && status !== null
       ? MAP_LABELS.stale
       : status === 'empty'
         ? EMPTY.contoursNotFound
@@ -97,12 +115,9 @@ export function ContoursButton({
         </Button>
       )}
 
-      {/* failed: повтор запроса тем же действием */}
-      {status === 'failed' && !stale && (
+      {searchAreaTooLarge && !stale && !loading && (
         <p className="px-1 text-2xs text-verdict-confirmed" role="alert">
-          {searchAreaTooLarge
-            ? MAP_LABELS.searchAreaTooLarge
-            : `${EMPTY.contoursFailed} ${MAP_LABELS.retryHint}`}
+          {MAP_LABELS.searchAreaTooLarge}
         </p>
       )}
     </div>

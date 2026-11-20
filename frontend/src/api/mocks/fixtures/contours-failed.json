@@ -1,6 +1,8 @@
 {
   "_synthetic": true,
-  "status": "failed",
-  "source": "OSM Overpass",
-  "features": []
+  "error": {
+    "code": "source_unavailable",
+    "message": "contour source is unavailable",
+    "retryable": true
+  }
 }

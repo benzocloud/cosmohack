@@ -36,7 +36,8 @@ export function PreviewChart({ series }: { series: Series }) {
       splitLine: { lineStyle: { color: gridLine } },
       axisLabel: { color: axisText },
     },
-    grid: { left: 48, right: 16, top: 24, bottom: 28 },
+    // Подпись оси находится над сеткой, поэтому ей нужен отступ внутри холста.
+    grid: { left: 48, right: 16, top: 40, bottom: 28 },
     series: [
       // сезонный фон — полоса p10–p90 (стек из двух линий)
       {
@@ -63,7 +64,8 @@ export function PreviewChart({ series }: { series: Series }) {
         type: 'line',
         data: split.bgMean,
         lineStyle: { type: 'dashed', width: 1.5, color: bgMean },
-        symbol: 'none',
+        symbol: split.observedDots.length || split.imputedDots.length ? 'none' : 'circle',
+        symbolSize: 4,
       },
       {
         id: 'imputedLine',

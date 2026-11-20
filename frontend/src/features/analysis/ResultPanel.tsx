@@ -58,13 +58,11 @@ function ResultLoading() {
   );
 }
 
-function EmptyResult() {
+function EmptyResult({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <p className="text-lg font-semibold text-ink">{EMPTY.resultNotReady}</p>
-      <p className="mt-2 max-w-[260px] text-xs leading-relaxed text-ink-tertiary">
-        Запустите анализ выбранного участка, чтобы здесь появились показатели и события.
-      </p>
+    <div className="flex h-full flex-col items-center justify-center p-4 text-center">
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
+      <p className="mt-2 max-w-xs text-xs leading-relaxed text-ink-secondary">{description}</p>
     </div>
   );
 }
@@ -233,7 +231,12 @@ export function AreaCard({
   if (!area) {
     if (areaLoading) return <ResultLoading />;
     if (areaError) return <ErrorState message={EMPTY.resultLoadFailed} onRetry={onRetryArea} />;
-    return <EmptyResult />;
+    return (
+      <EmptyResult
+        title="Выберите участок"
+        description="Нажмите на участок в списке или на карте, чтобы открыть его карточку."
+      />
+    );
   }
   return (
     <section aria-label="Карточка участка" className="h-full overflow-y-auto">
@@ -337,15 +340,29 @@ export function AnalysisTimeline({
   if (!area) {
     if (areaLoading) return <ResultLoading />;
     if (areaError) return <ErrorState message={EMPTY.resultLoadFailed} onRetry={onRetryArea} />;
-    return <EmptyResult />;
+    return (
+      <EmptyResult
+        title="Динамика NDVI"
+        description="После выбора участка здесь появятся график растительности и события за период анализа."
+      />
+    );
   }
-  if (!area.lastResult) return <EmptyResult />;
+  if (!area.lastResult) {
+    return (
+      <EmptyResult
+        title="Динамика NDVI"
+        description="Запустите анализ участка, чтобы получить график растительности и события."
+      />
+    );
+  }
   if (result.error) return <ErrorState message={EMPTY.resultLoadFailed} onRetry={onRetryResult} />;
   if (result.versionMismatch)
     return <ErrorState message={EMPTY.resultVersionMismatch} onRetry={onRetryResult} />;
   if (result.isLoading || !result.bundle) return <ResultLoading />;
 
   const { series, events } = result.bundle;
+  const hasNdvi = series.points.some((point) => point.ndvi !== null);
+  const hasBackground = series.points.some((point) => point.background);
   const limitations = resultLimitations({
     ...series,
     insufficient: series.status === 'insufficient_data',
@@ -385,11 +402,10 @@ export function AnalysisTimeline({
             </Alert>
           )}
         </div>
-        {series.points.length > 0 ? (
-          <PreviewChart series={series} />
-        ) : (
+        {!hasNdvi && (
           <p className="p-6 text-center text-xs text-ink-tertiary">{EMPTY.noSatellite}</p>
         )}
+        {(hasNdvi || hasBackground) && <PreviewChart series={series} />}
       </div>
       <div className="rounded-lg bg-surface p-4">
         <h3 className="text-lg font-semibold">Погодный контекст</h3>

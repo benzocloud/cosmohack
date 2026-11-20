@@ -8,7 +8,7 @@ if (!rootElement) {
   throw new Error('root element is missing from index.html');
 }
 
-async function bootstrap() {
+export async function bootstrap() {
   // Query-параметр включает MSW только в dev; production mock требует явной сборки VITE_MOCK=1.
   // Значение параметра нормализуем от лишних кавычек (частая ошибка ручного ввода).
   const mockParam = new URLSearchParams(window.location.search)
@@ -25,5 +25,3 @@ async function bootstrap() {
     </StrictMode>,
   );
 }
-
-void bootstrap();
