@@ -199,18 +199,20 @@ function AnalysisAction({ area }: { area: Area }) {
   const start = useStartAnalysis();
   const limits = useLimits().data ?? null;
   const period = area.period ?? area.lastResult?.period;
-  if (!period || area.activeJob) return null;
   const areaError = analysisAreaError(area.geometry, limits);
+  if (area.activeJob || (!period && !areaError)) return null;
 
   return (
     <div className="px-5 pb-5">
-      <Button
-        size="sm"
-        disabled={start.isPending || !!areaError}
-        onClick={() => start.mutate({ areaId: area.id, period })}
-      >
-        {area.lastResult ? 'Повторить анализ' : 'Провести анализ'}
-      </Button>
+      {period && (
+        <Button
+          size="sm"
+          disabled={start.isPending || !!areaError}
+          onClick={() => start.mutate({ areaId: area.id, period })}
+        >
+          {area.lastResult ? 'Повторить анализ' : 'Провести анализ'}
+        </Button>
+      )}
       {(areaError || start.isError) && (
         <p className="mt-2 text-xs text-verdict-confirmed" role="alert">
           {areaError ?? 'Не удалось запустить анализ. Повторите попытку.'}

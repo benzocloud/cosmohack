@@ -48,8 +48,10 @@ export function AreaList() {
       {areas.map((area) => {
         const selected = area.id === selectedAreaId;
         const status = jobStatusText(area.activeJob);
-        const needsManualStart = pendingStart?.areaId === area.id && !area.activeJob;
-        const areaError = needsManualStart ? analysisAreaError(area.geometry, limits) : null;
+        const needsManualStart =
+          pendingStart?.areaId === area.id &&
+          !area.activeJob &&
+          !analysisAreaError(area.geometry, limits);
         return (
           <li
             key={area.id}
@@ -75,7 +77,6 @@ export function AreaList() {
               {area.activeJob && (
                 <span className={cn('text-2xs', status.className)}>{status.text}</span>
               )}
-              {areaError && <span className="text-2xs text-verdict-confirmed">{areaError}</span>}
             </button>
             {area.activeJob && <JobWatcher jobId={area.activeJob.id} />}
             {needsManualStart && (
@@ -83,7 +84,7 @@ export function AreaList() {
                 variant="link"
                 size="sm"
                 className="min-h-11 self-center px-2 text-2xs"
-                disabled={start.isPending || !!areaError}
+                disabled={start.isPending}
                 onClick={() => {
                   if (!pendingStart) return;
                   start.mutate(

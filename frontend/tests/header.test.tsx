@@ -1,15 +1,17 @@
 import { adaptLimits } from '@/api/adapters/limits';
+import { AppShell } from '@/app/AppShell';
 import { Header } from '@/features/shell/Header';
 import { SCAFFOLD } from '@/lib/labels';
 import { useSelection } from '@/store/selection';
 import { useUi } from '@/store/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const renderHeader = (
-  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) => {
+vi.mock('@/features/map/MapView', () => ({ MapView: () => null }));
+
+const renderHeader = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <Header />
@@ -19,8 +21,9 @@ const renderHeader = (
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   useSelection.setState({ selectedAreaId: null });
-  useUi.setState({ demoMode: false });
+  useUi.setState({ demoMode: false, pendingStart: null });
 });
 
 describe('Header', () => {
@@ -37,13 +40,23 @@ describe('Header', () => {
     expect(screen.getByTestId('demo-badge')).toBeTruthy();
   });
 
-  it('объясняет, почему нельзя запустить анализ слишком маленького участка', () => {
+  it.each([
+    { viewport: 'desktop', location: 'карточка' },
+    { viewport: 'mobile', location: 'шапка' },
+  ])('показывает ограничение площади один раз: $location', ({ viewport }) => {
+    vi.stubGlobal('matchMedia', (media: string) => ({
+      matches: viewport === 'desktop',
+      media,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
     const queryClient = new QueryClient({
       defaultOptions: { queries: { staleTime: Number.POSITIVE_INFINITY } },
     });
     const area = {
       id: 'small-area',
       name: 'Участок 2',
+      source: { kind: 'drawn', label: 'Нарисован вручную' },
       period: { from: '2026-05-21', to: '2026-11-20' },
       geometry: {
         type: 'Polygon',
@@ -59,15 +72,27 @@ describe('Header', () => {
       },
     };
     queryClient.setQueryData(['area', area.id], area);
+    queryClient.setQueryData(['areas'], [area]);
     queryClient.setQueryData(
       ['limits'],
       adaptLimits({ area_ha_min: 0.5, area_ha_max: 25000, vertices_max: 512 }),
     );
     useSelection.setState({ selectedAreaId: area.id });
-    renderHeader(queryClient);
+    useUi.setState({ pendingStart: { areaId: area.id, period: area.period } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppShell />
+      </QueryClientProvider>,
+    );
 
     const button = screen.getByRole<HTMLButtonElement>('button', { name: SCAFFOLD.runAnalysis });
     expect(button.disabled).toBe(true);
-    expect(screen.getByRole('alert').textContent).toContain('Для анализа нужно не менее 0,5 га.');
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('Для анализа нужно не менее 0,5 га.');
+    const owner =
+      viewport === 'desktop'
+        ? screen.getByRole('region', { name: 'Карточка участка' })
+        : screen.getByRole('banner');
+    expect(within(owner).getByRole('alert')).toBe(alert);
   });
 });

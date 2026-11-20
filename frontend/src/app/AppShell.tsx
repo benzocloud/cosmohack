@@ -195,10 +195,14 @@ function MobileLayout() {
 
 export function AppShell() {
   const breakpoint = useBreakpoint();
+  const cardOpen = useUi((s) => s.cardOpen);
+  const mobileTab = useUi((s) => s.mobileTab);
+  const areaCardVisible =
+    breakpoint === 'desktop' || (cardOpen && (breakpoint === 'tablet' || mobileTab === 'map'));
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-app text-[13px]">
-      <Header />
+      <Header areaCardVisible={areaCardVisible} />
       {breakpoint === 'desktop' && <DesktopLayout />}
       {breakpoint === 'tablet' && <TabletLayout />}
       {breakpoint === 'mobile' && <MobileLayout />}
