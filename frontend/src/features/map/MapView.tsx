@@ -164,7 +164,12 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
       _sw: { lng: number; lat: number };
       _ne: { lng: number; lat: number };
     };
-    setBbox(`${sw.lng},${sw.lat},${ne.lng},${ne.lat}`);
+    const searchBbox = `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`;
+    if (searchBbox === bbox) {
+      void contoursQuery.refetch();
+    } else {
+      setBbox(searchBbox);
+    }
     setStale(false);
     setContourPopover(null);
   };

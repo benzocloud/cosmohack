@@ -72,6 +72,21 @@ func TestContoursTable(t *testing.T) {
 			t.Fatalf("%s", w.Body.String())
 		}
 	})
+	t.Run("search_area_too_large", func(t *testing.T) {
+		err := domain.NewProviderError(domain.FailureLimitExceeded, "limits", "search area is too large")
+		h, _ := newEnv(t, stubContours{Err: err}, nil)
+		w := doJSON(t, h, http.MethodGet, "/api/regions/contours?bbox=-1,-1,1,1", nil)
+		var response struct {
+			Error struct {
+				Code      string `json:"code"`
+				Retryable bool   `json:"retryable"`
+			} `json:"error"`
+		}
+		decode(t, w, &response)
+		if w.Code != http.StatusUnprocessableEntity || response.Error.Code != "limit_exceeded" || response.Error.Retryable {
+			t.Fatalf("%d %s", w.Code, w.Body.String())
+		}
+	})
 	t.Run("error", func(t *testing.T) {
 		h, _ := newEnv(t, stubContours{Err: errors.New("overpass down")}, nil)
 		w := doJSON(t, h, http.MethodGet, "/api/regions/contours?bbox=-1,-1,1,1", nil)

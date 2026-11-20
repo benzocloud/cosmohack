@@ -94,6 +94,7 @@ export function useContours(bbox: string | null | undefined, mockCase?: string) 
     queryKey: ['contours', bbox, mockCase ?? null],
     queryFn: () => fetchContours(bbox as string, mockCase),
     enabled: !!bbox,
+    retry: false,
     placeholderData: keepPreviousData,
   });
 }

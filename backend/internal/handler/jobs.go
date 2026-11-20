@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/Benzocloud/cosmohack/backend/internal/domain"
 )
 
 func (h *handler) getContours(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +21,10 @@ func (h *handler) getContours(w http.ResponseWriter, r *http.Request) {
 
 	items, err := h.contours.Find(r.Context(), b.MinLon, b.MinLat, b.MaxLon, b.MaxLat)
 	if err != nil {
+		if domain.KindOf(err) == domain.FailureLimitExceeded {
+			writePublicError(w, http.StatusUnprocessableEntity, errorCodeLimitExceeded, false)
+			return
+		}
 		writePublicError(w, http.StatusInternalServerError, errorCodeSourceUnavailable, true)
 		return
 	}

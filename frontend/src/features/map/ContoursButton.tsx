@@ -1,4 +1,5 @@
 import type { ContoursResult } from '@/api/adapters/contours';
+import { isAppError } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EMPTY, MAP_LABELS, SCAFFOLD } from '@/lib/labels';
@@ -25,6 +26,7 @@ export function ContoursButton({
   onDraw: () => void;
 }) {
   const status = error ? 'failed' : (result?.status ?? null);
+  const searchAreaTooLarge = isAppError(error) && error.code === 'limit_exceeded';
   const okResult = result?.status === 'ok' ? result : null;
   const hasResult = status === 'ok' || status === 'empty' || status === 'failed';
 
@@ -98,7 +100,9 @@ export function ContoursButton({
       {/* failed: повтор запроса тем же действием */}
       {status === 'failed' && !stale && (
         <p className="px-1 text-2xs text-verdict-confirmed" role="alert">
-          {EMPTY.contoursFailed} {MAP_LABELS.retryHint}
+          {searchAreaTooLarge
+            ? MAP_LABELS.searchAreaTooLarge
+            : `${EMPTY.contoursFailed} ${MAP_LABELS.retryHint}`}
         </p>
       )}
     </div>

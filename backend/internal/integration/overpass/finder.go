@@ -22,8 +22,9 @@ const (
 	License          = "ODbL-1.0"
 	Attribution      = "© OpenStreetMap contributors"
 
-	defaultQueryTimeout = 60
-	defaultMaxResults   = 200
+	defaultQueryTimeout   = 3
+	defaultRequestTimeout = 4 * time.Second
+	defaultMaxResults     = 200
 )
 
 type Config struct {
@@ -43,7 +44,7 @@ func DefaultConfig() Config {
 		QueryTimeoutSeconds: defaultQueryTimeout,
 		MaxResults:          defaultMaxResults,
 		Limits:              source.DefaultLimits(),
-		Client:              httpx.NewClient(httpx.WithTimeout(90 * time.Second)),
+		Client:              httpx.NewClient(httpx.WithTimeout(defaultRequestTimeout)),
 		Clock:               time.Now,
 	}
 }
@@ -66,7 +67,7 @@ func NewFinder(config Config) (*Finder, error) {
 		config.MaxResults = defaultMaxResults
 	}
 	if config.Client == nil {
-		config.Client = httpx.NewClient(httpx.WithTimeout(90 * time.Second))
+		config.Client = httpx.NewClient(httpx.WithTimeout(defaultRequestTimeout))
 	}
 	if config.Clock == nil {
 		config.Clock = time.Now

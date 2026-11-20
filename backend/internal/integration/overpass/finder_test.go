@@ -216,6 +216,31 @@ func TestFinderMapsProviderFailure(t *testing.T) {
 	}
 }
 
+func TestFinderUsesFallbackWhenPrimaryStalls(t *testing.T) {
+	primary := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		if err := request.ParseForm(); err != nil {
+			return
+		}
+		<-request.Context().Done()
+	}))
+	t.Cleanup(primary.Close)
+	fallback := serve(t, fixture(t, "farmland_krasnodar.json"), nil)
+	config := overpass.DefaultConfig()
+	config.PrimaryEndpoint = primary.URL
+	config.FallbackEndpoint = fallback.URL
+	finder, err := overpass.NewFinder(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
+	defer cancel()
+	result, err := finder.FindContours(ctx, searchArea(t))
+	if err != nil || result.Count() != 3 {
+		t.Fatalf("резервный сервер: контуров %d, ошибка %v", result.Count(), err)
+	}
+}
+
 func TestFinderQueryUsesOverpassBoundingBoxOrder(t *testing.T) {
 	query := ""
 	server := serve(t, fixture(t, "empty_area.json"), &query)

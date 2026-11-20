@@ -1,9 +1,10 @@
 import { isAppError } from '@/api/client';
 import { setupMockServer } from '@/api/mocks/server';
 import { useStartAnalysis } from '@/api/mutations';
-import { useAreas, useLimits, useResultBundle } from '@/api/queries';
+import { useAreas, useContours, useLimits, useResultBundle } from '@/api/queries';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -34,6 +35,32 @@ describe('useAreas (mock)', () => {
     expect(new Set(verdicts)).toEqual(
       new Set(['normal', 'candidate', 'confirmed', 'insufficient_data']),
     );
+  });
+});
+
+describe('useContours (mock)', () => {
+  it('ждёт ручного повтора после ошибки и снова ищет в том же bbox', async () => {
+    let calls = 0;
+    server.use(
+      http.get('*/api/regions/contours', () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.json({ error: { code: 'source_unavailable' } }, { status: 500 })
+          : HttpResponse.json({ contours: [] });
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: 1, retryDelay: 0 } } });
+    const { result } = renderHook(() => useContours('38.90,45.20,39.10,45.35'), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.error).toMatchObject({ code: 'source_unavailable' }));
+    expect(calls).toBe(1);
+    await result.current.refetch();
+    await waitFor(() => expect(result.current.data?.status).toBe('empty'));
+    expect(calls).toBe(2);
   });
 });
 
