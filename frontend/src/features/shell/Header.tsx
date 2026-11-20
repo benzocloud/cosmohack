@@ -102,15 +102,15 @@ export function Header({ areaCardVisible = false }: { areaCardVisible?: boolean 
             {areaQuery.data?.name ??
               (selectedAreaId ? 'Выбранный участок' : SCAFFOLD.noAreaSelected)}
           </span>
-          <div className="flex items-center gap-1 text-2xs text-ink-tertiary">
-            <CalendarDays aria-hidden />
+          <div className="flex items-center gap-2 text-2xs text-ink-tertiary">
+            <CalendarDays className="size-5 shrink-0" aria-hidden />
             <Input
               type="date"
               value={selectedPeriod?.from ?? ''}
               min={limitsQuery.data?.minDate}
               onChange={(event) => updatePeriod('from', event.target.value)}
               aria-label="Период анализа с"
-              className="h-8 w-[124px] bg-surface text-2xs"
+              className="block h-8 w-[136px] bg-surface text-2xs"
               disabled={!selectedAreaId}
             />
             <span>—</span>
@@ -120,7 +120,7 @@ export function Header({ areaCardVisible = false }: { areaCardVisible?: boolean 
               min={limitsQuery.data?.minDate}
               onChange={(event) => updatePeriod('to', event.target.value)}
               aria-label="Период анализа по"
-              className="h-8 w-[124px] bg-surface text-2xs"
+              className="block h-8 w-[136px] bg-surface text-2xs"
               disabled={!selectedAreaId}
             />
           </div>

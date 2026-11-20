@@ -100,7 +100,6 @@ export const DEV_LABELS = {
 export const MAP_LABELS = {
   searching: 'Ищем контуры…',
   retrySearch: 'Повторить поиск контуров',
-  searchTooltip: 'Найти сельхозконтуры в текущей области карты',
   searchAreaTooLarge: 'Приблизьте карту и повторите поиск контуров.',
   sourceUnavailable: 'Сервис контуров временно недоступен',
   retryHint: 'Попробуйте ещё раз чуть позже.',

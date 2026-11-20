@@ -59,31 +59,20 @@ export function ContoursButton({
           : SCAFFOLD.findContours;
 
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-1.5 shadow-1">
-      <div className="flex items-start gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal py-2"
-              disabled={loading}
-              onClick={onSearch}
-            >
-              {loading ? (
-                <LoaderCircle className="animate-spin" aria-hidden />
-              ) : (
-                <Search aria-hidden />
-              )}
-              {label}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{MAP_LABELS.searchTooltip}</TooltipContent>
-        </Tooltip>
-      </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <Button
+        size="sm"
+        className="h-auto min-h-11 whitespace-normal py-1 leading-tight shadow-1"
+        disabled={loading}
+        onClick={onSearch}
+      >
+        {loading ? <LoaderCircle className="animate-spin" aria-hidden /> : <Search aria-hidden />}
+        {label}
+      </Button>
 
       {/* ok: N контуров + примечание о неполноте каталога по ⓘ */}
       {okResult && !stale && (
-        <div className="flex items-center justify-between gap-2 px-1 text-2xs text-ink-secondary">
+        <div className="flex items-center justify-between gap-2 rounded-sm border border-border bg-surface px-2 py-1.5 text-2xs text-ink-secondary shadow-1">
           <span>{MAP_LABELS.contoursCount(okResult.contours.length)}</span>
           {okResult.coverageNote && (
             <Tooltip>
@@ -108,7 +97,7 @@ export function ContoursButton({
         <Button
           variant="outline"
           size="sm"
-          className="h-auto min-h-11 whitespace-normal py-2"
+          className="h-auto min-h-11 whitespace-normal py-2 shadow-1"
           onClick={onDraw}
         >
           {SCAFFOLD.drawArea}
@@ -116,7 +105,10 @@ export function ContoursButton({
       )}
 
       {searchAreaTooLarge && !stale && !loading && (
-        <p className="px-1 text-2xs text-verdict-confirmed" role="alert">
+        <p
+          className="rounded-sm border border-border bg-surface px-2 py-1.5 text-2xs text-verdict-confirmed shadow-1"
+          role="alert"
+        >
           {MAP_LABELS.searchAreaTooLarge}
         </p>
       )}

@@ -22,6 +22,13 @@ test('временный сбой скрывается, подсказка об 
   const search = page
     .getByRole('button', { name: 'Найти контуры в этой области', exact: true })
     .first();
+  const basemap = page.getByRole('button', { name: 'Спутник', exact: true });
+  const [searchBox, basemapBox] = await Promise.all([search.boundingBox(), basemap.boundingBox()]);
+  if (!searchBox || !basemapBox) throw new Error('Панель карты не видна');
+  expect(searchBox.y).toBeCloseTo(basemapBox.y);
+  expect(searchBox.height).toBeCloseTo(basemapBox.height);
+  expect(basemapBox.height).toBeGreaterThanOrEqual(44);
+  expect(basemapBox.x - (searchBox.x + searchBox.width)).toBeGreaterThanOrEqual(8);
   const retry = page.getByRole('button', { name: 'Повторить поиск контуров', exact: true });
   const message = page.getByText('Сервис контуров временно недоступен', { exact: true });
   await search.click();

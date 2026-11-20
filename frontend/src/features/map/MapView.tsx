@@ -453,9 +453,7 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
         )}
       </MapGL>
 
-      {/* Управление поиском/рисованием — 44px цели */}
-      {/* Колонка управления: не заезжает на переключатель подложки справа */}
-      <div className="absolute left-3 top-3 z-10 flex w-[calc(100%-124px)] flex-col gap-2">
+      <div className="absolute inset-x-3 top-3 z-10 flex items-start gap-2">
         <ContoursButton
           loading={contoursQuery.isFetching}
           stale={stale}
@@ -464,6 +462,7 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
           onSearch={searchContours}
           onDraw={startDrawing}
         />
+        <BasemapSwitcher />
       </div>
 
       {!drawing && (
@@ -484,10 +483,6 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
           </Tooltip>
         </div>
       )}
-
-      <div className="absolute right-3 top-3 z-10">
-        <BasemapSwitcher />
-      </div>
 
       {areas.length === 0 && !drawing && (
         <MapEmptyHint onSearch={searchContours} onDraw={startDrawing} />
