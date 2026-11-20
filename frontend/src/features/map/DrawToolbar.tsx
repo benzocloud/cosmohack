@@ -16,8 +16,8 @@ export function DrawToolbar({
   onCancel: () => void;
 }) {
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 flex w-[calc(100%-24px)] max-w-md -translate-x-1/2 flex-col gap-2 rounded-md border border-border bg-surface/95 p-3 shadow-2 backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-2 text-2xs text-ink-secondary">
+    <div className="absolute bottom-4 left-1/2 z-20 flex w-[calc(100%-24px)] max-w-md -translate-x-1/2 flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-2xs text-ink-secondary">
         <span>{MAP_LABELS.drawHint}</span>
         <span className="whitespace-nowrap">{MAP_LABELS.releaseToClose}</span>
       </div>

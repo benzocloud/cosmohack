@@ -42,7 +42,7 @@ export function AreaList() {
   }
 
   return (
-    <ul className="flex flex-col">
+    <ul className="flex flex-col gap-1 px-2 pb-3">
       {areas.map((area) => {
         const selected = area.id === selectedAreaId;
         const status = jobStatusText(area.activeJob);
@@ -51,7 +51,7 @@ export function AreaList() {
           <li
             key={area.id}
             className={cn(
-              'flex items-stretch border-b border-border last:border-b-0',
+              'flex items-stretch rounded-md',
               selected ? 'bg-action-soft' : 'hover:bg-surface-hover',
             )}
           >
@@ -59,9 +59,9 @@ export function AreaList() {
               type="button"
               onClick={() => selectionActions.selectArea(area.id, 'list')}
               aria-current={selected ? 'true' : undefined}
-              className="flex min-h-11 min-w-0 flex-1 flex-col items-start gap-0.5 px-4 py-2 text-left"
+              className="flex min-h-11 min-w-0 flex-1 flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left"
             >
-              <span className="truncate text-sm font-medium">{area.name}</span>
+              <span className="max-w-full truncate text-sm font-semibold">{area.name}</span>
               {area.lastResult ? (
                 <span className={cn('text-2xs', VERDICT_COLOR[area.lastResult.verdict])}>
                   {VERDICT_LABEL[area.lastResult.verdict]}

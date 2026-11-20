@@ -10,7 +10,7 @@ const TABS: { id: MobileTab; label: string; Icon: typeof MapIcon }[] = [
 ];
 
 /**
- * Нижняя навигация телефона 56px: Участки · Карта · Анализ (frontend-plan §6.3).
+ * Нижняя навигация телефона: Участки · Карта · Анализ (frontend-plan §6.3).
  * Выбор участка, события и даты сохраняется при переключении — они живут в URL/stores.
  */
 export function MobileTabBar() {
@@ -20,7 +20,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label={SCAFFOLD.mainNavigation}
-      className="flex h-14 shrink-0 border-t border-border bg-surface shadow-[0_-2px_10px_rgba(21,26,33,.04)] lg:hidden"
+      className="flex shrink-0 bg-surface-muted pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))] lg:hidden"
     >
       {TABS.map(({ id, label, Icon }) => {
         const active = mobileTab === id;
@@ -32,11 +32,18 @@ export function MobileTabBar() {
             aria-current={active ? 'page' : undefined}
             onClick={() => setMobileTab(id)}
             className={cn(
-              'tap-target flex flex-1 flex-col items-center justify-center gap-0.5 text-2xs',
+              'tap-target flex flex-1 flex-col items-center justify-center gap-1 text-2xs font-medium',
               active ? 'text-action' : 'text-ink-tertiary',
             )}
           >
-            <Icon className="size-5" aria-hidden />
+            <span
+              className={cn(
+                'grid h-7 w-14 place-items-center rounded-full',
+                active && 'bg-action-soft',
+              )}
+            >
+              <Icon className="size-5" aria-hidden />
+            </span>
             {label}
           </button>
         );

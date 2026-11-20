@@ -16,7 +16,7 @@ export function MapLegend() {
   return (
     <div
       className={cn(
-        'absolute left-0 top-1/2 z-20 -translate-y-1/2 overflow-hidden rounded-r-md border border-l-0 border-slate-300 bg-white shadow-2 transition-[width] duration-200',
+        'absolute left-0 top-1/2 z-20 -translate-y-1/2 overflow-hidden rounded-r-lg border border-l-0 border-border bg-surface shadow-1 transition-[width] duration-200',
         expanded ? 'w-[280px]' : 'w-12',
       )}
     >
@@ -27,7 +27,7 @@ export function MapLegend() {
         aria-expanded={expanded}
         onClick={() => setExpanded((value) => !value)}
       >
-        <span className={cn('text-2xs font-semibold text-slate-900', !expanded && 'sr-only')}>
+        <span className={cn('text-2xs font-semibold text-ink', !expanded && 'sr-only')}>
           {MAP_LABELS.legend}
         </span>
         {expanded ? (
@@ -37,7 +37,7 @@ export function MapLegend() {
         )}
       </Button>
       {expanded && (
-        <ul className="flex max-w-[280px] flex-col gap-1.5 px-3 pb-2 text-2xs text-slate-700">
+        <ul className="flex max-w-[280px] flex-col gap-1.5 px-3 pb-2 text-2xs text-ink-secondary">
           <li className="flex items-center gap-2">
             <span aria-hidden className="size-2.5 rounded-full bg-verdict-normal" />
             {VERDICT_LABEL.normal}

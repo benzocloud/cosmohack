@@ -71,26 +71,26 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 shadow-[0_1px_0_rgba(21,26,33,.03)] sm:px-5 lg:h-14">
-      <div className="flex shrink-0 flex-col">
+    <header className="relative z-30 flex h-14 shrink-0 items-center gap-2 bg-app px-3 sm:gap-3 sm:px-4 lg:h-16 xl:grid xl:grid-cols-[1fr_auto_1fr]">
+      <a
+        href="/"
+        className="tap-target flex shrink-0 items-center rounded-md xl:justify-self-start"
+      >
         <img
           src="/brand/benzolens-horizontal-primary.svg"
-          width={107}
-          height={32}
+          width={136}
+          height={41}
+          className="h-auto w-24 min-[360px]:w-[112px] sm:w-[136px] lg:w-40"
           alt={SCAFFOLD.appTitle}
         />
-        <span className="hidden pl-1.5 text-2xs leading-tight text-ink-tertiary sm:block">
-          {SCAFFOLD.appSubtitle}
-        </span>
-      </div>
+      </a>
 
-      <div className="mx-auto hidden items-center gap-3 rounded-md bg-app px-3 py-1.5 lg:flex">
-        <span className="text-sm text-ink-secondary">
-          {selectedAreaId ?? SCAFFOLD.noAreaSelected}
+      <div className="mx-auto hidden min-w-0 items-center gap-3 rounded-full bg-surface-muted px-3 py-1 lg:flex">
+        <span className="max-w-52 truncate text-sm font-medium text-ink-secondary">
+          {areaQuery.data?.name ?? (selectedAreaId ? 'Выбранный участок' : SCAFFOLD.noAreaSelected)}
         </span>
         <div className="flex items-center gap-1 text-2xs text-ink-tertiary">
           <CalendarDays aria-hidden />
-          <span className="sr-only">Период анализа, с</span>
           <Input
             type="date"
             value={selectedPeriod?.from ?? ''}
@@ -101,7 +101,6 @@ export function Header() {
             disabled={!selectedAreaId}
           />
           <span>—</span>
-          <span className="sr-only">Период анализа, по</span>
           <Input
             type="date"
             value={selectedPeriod?.to ?? ''}
@@ -114,7 +113,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-1 sm:gap-2 xl:justify-self-end">
         <DemoBadge demo={demoMode} />
         <Button
           size="sm"
@@ -124,7 +123,7 @@ export function Header() {
             Boolean(job && (job.status === 'queued' || job.status === 'running'))
           }
           onClick={runAnalysis}
-          className="inline-flex"
+          className="min-h-10 px-2 sm:px-3"
         >
           {start.isPending
             ? 'Запуск…'

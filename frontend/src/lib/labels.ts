@@ -164,7 +164,6 @@ export const AREA_LIST_LABELS = {
  */
 export const SCAFFOLD = {
   appTitle: 'BenzoLens',
-  appSubtitle: 'Аналитика полей',
   areasPanel: 'Участки',
   mapPanel: 'Карта',
   analysisPanel: 'Анализ',

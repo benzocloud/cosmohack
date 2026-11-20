@@ -58,8 +58,8 @@ function ResultLoading() {
 
 function EmptyResult() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-      <p className="text-sm font-medium text-ink">{EMPTY.resultNotReady}</p>
+    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+      <p className="text-lg font-semibold text-ink">{EMPTY.resultNotReady}</p>
       <p className="mt-2 max-w-[260px] text-xs leading-relaxed text-ink-tertiary">
         Запустите анализ выбранного участка, чтобы здесь появились показатели и события.
       </p>
@@ -108,18 +108,13 @@ function AreaSummary({ area, result }: { area: Area; result: ResultData }) {
   return (
     <div className="space-y-4 p-5">
       <div>
-        <p className="text-2xs font-medium uppercase tracking-[0.12em] text-ink-tertiary">
-          Карточка участка
-        </p>
-        <h2 className="mt-1 text-base font-semibold tracking-[-0.01em]">{area.name}</h2>
+        <p className="text-xs font-medium text-ink-tertiary">Карточка участка</p>
+        <h2 className="mt-1 break-words text-xl font-semibold tracking-[-0.02em]">{area.name}</h2>
         <p className="mt-1 text-xs text-ink-secondary">{area.source.label}</p>
       </div>
 
       {job && (
-        <div
-          className="rounded-md border border-border bg-surface-muted p-3"
-          aria-label="Состояние задачи"
-        >
+        <div className="rounded-lg bg-surface-muted p-4" aria-label="Состояние задачи">
           <p className="text-2xs font-medium text-ink-tertiary">Анализ</p>
           <p className={`mt-1 text-sm ${status.className}`}>{status.text}</p>
           {job.message && <p className="mt-1 text-xs text-ink-secondary">{job.message}</p>}
@@ -130,8 +125,8 @@ function AreaSummary({ area, result }: { area: Area; result: ResultData }) {
       )}
 
       {meta && (
-        <div className="space-y-3">
-          <div>
+        <div className="space-y-4">
+          <div className="rounded-lg bg-surface-muted p-4">
             <p className="text-2xs text-ink-tertiary">Вывод</p>
             <p className="mt-1 text-sm font-medium">{VERDICT_LABEL[meta.verdict]}</p>
             {meta.severity && (
@@ -204,7 +199,7 @@ function AnalysisAction({ area }: { area: Area }) {
   if (!period || area.activeJob) return null;
 
   return (
-    <div className="border-b border-border px-5 py-3">
+    <div className="px-5 pb-5">
       <Button
         size="sm"
         disabled={start.isPending}
@@ -350,10 +345,10 @@ export function AnalysisTimeline({
     insufficient: series.status === 'insufficient_data',
   });
   return (
-    <div className="h-full min-h-0 overflow-y-auto p-4">
-      <div className="rounded-md border border-border bg-surface">
+    <div className="h-full min-h-0 space-y-3 overflow-y-auto bg-surface-muted p-3">
+      <div className="rounded-lg bg-surface">
         <div className="border-b border-border px-4 py-3">
-          <h3 className="text-sm font-medium">Динамика NDVI</h3>
+          <h3 className="text-lg font-semibold">Динамика NDVI</h3>
           <p className="mt-1 text-2xs text-ink-tertiary">
             {series.period.from} — {series.period.to} · {series.points.length} наблюдений
           </p>
@@ -390,14 +385,14 @@ export function AnalysisTimeline({
           <p className="p-6 text-center text-xs text-ink-tertiary">{EMPTY.noSatellite}</p>
         )}
       </div>
-      <div className="mt-3 rounded-md border border-border bg-surface p-4">
-        <h3 className="text-sm font-medium">Погодный контекст</h3>
+      <div className="rounded-lg bg-surface p-4">
+        <h3 className="text-lg font-semibold">Погодный контекст</h3>
         <div className="mt-3">
           <WeatherSummary series={series} />
         </div>
       </div>
-      <div className="mt-3 rounded-md border border-border bg-surface p-4">
-        <h3 className="text-sm font-medium">События</h3>
+      <div className="rounded-lg bg-surface p-4">
+        <h3 className="text-lg font-semibold">События</h3>
         <div className="mt-3 space-y-2">
           {events.length > 0 ? (
             events.map((event) => <EventCard key={event.id} event={event} />)

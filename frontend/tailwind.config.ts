@@ -3,8 +3,8 @@ import animate from 'tailwindcss-animate';
 
 /**
  * Дизайн-система BenzoLens (frontend-plan §2).
- * Все цвета — ссылки на CSS-переменные из src/styles/tokens.css (§2.2 дословно),
- * значения не дублируются: источник истины один — токены.
+ * Базовая тема общая с лендингом (public/brand/theme.css).
+ * Токены аналитики находятся в src/styles/tokens.css.
  * Плюс канонические алиасы shadcn/ui (background/primary/...), маппящиеся на те же токены.
  */
 export default {
@@ -13,7 +13,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-ui)'],
       },
       // Шкала типографики §2.3: 12/13/14/16/20/24
       fontSize: {

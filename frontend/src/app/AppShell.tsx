@@ -16,9 +16,9 @@ import { useState } from 'react';
 
 /**
  * Каркас приложения по §6.1–6.3.
- * Десктоп ≥1280: список 300 | карта | карточка 380, низ 440px.
- * Планшет 1024–1279: рейка 56px + Sheet слева, карточка — Sheet справа, низ 400px.
- * Мобильный <1024: вкладки Участки/Карта/Анализ, шапка 48px.
+ * Десктоп ≥1280: список, карта с графиком, карточка участка.
+ * Планшет 1024–1279: рейка и выезжающие панели.
+ * Мобильный <1024: вкладки Участки, Карта, Анализ.
  *
  * FE-3: центральная зона — MapView (карта, контуры, рисование), слева —
  * минимальный список участков. Карточка и график остаются заглушками (FE-2/FE-4).
@@ -31,11 +31,11 @@ export function AreasPanel() {
   const setMobileTab = useUi((s) => s.setMobileTab);
   return (
     <section aria-label={SCAFFOLD.areasPanel} className="flex h-full flex-col overflow-y-auto">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold">{SCAFFOLD.areasPanel}</h2>
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
+        <h2 className="text-lg font-semibold">{SCAFFOLD.areasPanel}</h2>
         <Button
           size="sm"
-          variant="outline"
+          variant="secondary"
           className="min-h-11"
           onClick={() => {
             setMobileTab('map');
@@ -90,20 +90,19 @@ function useSelectedResult(): ResultViewProps {
 function DesktopLayout() {
   const result = useSelectedResult();
   return (
-    <div className="flex min-h-0 flex-1">
-      <aside className="w-[300px] shrink-0 border-r border-border bg-surface">
+    <div className="flex min-h-0 flex-1 gap-3 px-3 pb-3">
+      <aside className="w-[264px] shrink-0 overflow-hidden rounded-lg bg-surface">
         <AreasPanel />
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1">
+      <main className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-lg bg-surface-muted">
           <MapView variant="desktop" />
         </div>
-        {/* Нижняя зона 440px: график ~300 + погода (§2.4) */}
-        <div className="h-[440px] shrink-0 border-t border-border bg-surface">
+        <div className="h-[min(42%,440px)] shrink-0 overflow-hidden rounded-lg bg-surface-muted">
           <AnalysisTimeline {...result} />
         </div>
       </main>
-      <aside className="w-[380px] shrink-0 border-l border-border bg-surface">
+      <aside className="w-[320px] shrink-0 overflow-hidden rounded-lg bg-surface">
         <AreaCard {...result} />
       </aside>
     </div>
@@ -117,9 +116,9 @@ function TabletLayout() {
   const setCardOpen = useUi((s) => s.setCardOpen);
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 flex-1 gap-3 px-3 pb-3">
       {/* Рейка 56px: список участков уезжает в Sheet (§6.2) */}
-      <aside className="flex w-14 shrink-0 flex-col items-center border-r border-border bg-surface py-2">
+      <aside className="flex w-14 shrink-0 flex-col items-center rounded-lg bg-surface-muted py-2">
         <Sheet open={listOpen} onOpenChange={setListOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" aria-label={SCAFFOLD.openAreasList}>
@@ -135,32 +134,27 @@ function TabletLayout() {
             </div>
           </SheetContent>
         </Sheet>
-      </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
-        <div className="relative min-h-0 flex-1">
-          <MapView variant="desktop" />
-          {/* Карточка — выезжающая панель поверх карты (§6.2) */}
-          <Sheet open={cardOpen} onOpenChange={setCardOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={SCAFFOLD.openAreaCard}
-                className="absolute right-3 top-3 z-10 shadow-1"
-              >
-                <PanelRight aria-hidden />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[380px] p-0 sm:max-w-[380px]">
-              <SheetHeader className="border-b border-border">
-                <SheetTitle className="text-sm">{SCAFFOLD.openAreaCard}</SheetTitle>
-              </SheetHeader>
+        <Sheet open={cardOpen} onOpenChange={setCardOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={SCAFFOLD.openAreaCard}>
+              <PanelRight aria-hidden />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="flex w-[380px] flex-col gap-0 p-0 sm:max-w-[380px]">
+            <SheetHeader className="border-b border-border">
+              <SheetTitle className="text-sm">{SCAFFOLD.openAreaCard}</SheetTitle>
+            </SheetHeader>
+            <div className="min-h-0 flex-1">
               <AreaCard {...result} />
-            </SheetContent>
-          </Sheet>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </aside>
+      <main className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg bg-surface-muted">
+          <MapView variant="desktop" />
         </div>
-        {/* Низ 400px на планшете (§6.2) */}
-        <div className="h-[400px] shrink-0 border-t border-border bg-surface">
+        <div className="h-[min(42%,400px)] shrink-0 overflow-hidden rounded-lg bg-surface-muted">
           <AnalysisTimeline {...result} />
         </div>
       </main>
@@ -176,7 +170,7 @@ function MobileLayout() {
 
   return (
     <>
-      <main className="min-h-0 flex-1">
+      <main className="mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-lg bg-surface">
         {mobileTab === 'areas' && <AreasPanel />}
         {mobileTab === 'map' && (
           <div className="relative h-full">

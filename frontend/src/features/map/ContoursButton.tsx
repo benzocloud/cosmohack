@@ -39,11 +39,16 @@ export function ContoursButton({
           : SCAFFOLD.findContours;
 
   return (
-    <div className="flex max-w-[calc(100%-24px)] flex-col gap-1 rounded-md border border-border bg-surface/95 p-1.5 shadow-1 backdrop-blur-sm">
+    <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-1.5 shadow-1">
       <div className="flex items-start gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="sm" className="min-h-11 flex-1" disabled={loading} onClick={onSearch}>
+            <Button
+              size="sm"
+              className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal py-2"
+              disabled={loading}
+              onClick={onSearch}
+            >
               {loading ? (
                 <LoaderCircle className="animate-spin" aria-hidden />
               ) : (
@@ -80,7 +85,12 @@ export function ContoursButton({
 
       {/* empty: не ошибка — предлагаем нарисовать свой участок */}
       {status === 'empty' && !stale && (
-        <Button variant="outline" size="sm" className="min-h-11" onClick={onDraw}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-auto min-h-11 whitespace-normal py-2"
+          onClick={onDraw}
+        >
           {SCAFFOLD.drawArea}
         </Button>
       )}

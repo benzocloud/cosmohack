@@ -439,7 +439,7 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
             <Button
               variant="outline"
               size="icon"
-              className="size-12 rounded-full border-slate-300 bg-white text-slate-900 shadow-2 hover:bg-slate-50"
+              className="size-12 rounded-full border-border bg-action-soft text-ink shadow-1 hover:bg-surface-hover"
               aria-label="Отметить свою зону"
               onClick={startDrawing}
             >

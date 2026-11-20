@@ -21,7 +21,7 @@ export function BasemapSwitcher({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          className={cn('min-h-11 border-slate-300 bg-white text-slate-900 shadow-2', className)}
+          className={cn('min-h-11 border-border bg-surface text-ink shadow-1', className)}
           aria-label={label}
           onClick={() => setBasemap(toSatellite ? 'satellite' : 'map')}
         >

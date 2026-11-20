@@ -12,10 +12,13 @@ export function DemoBadge({ demo }: { demo: boolean }) {
     <Badge
       variant="outline"
       data-testid="demo-badge"
-      className="border-border-strong text-ink-secondary"
+      className="shrink-0 whitespace-nowrap border-border-strong text-ink-secondary"
     >
       <FlaskConical aria-hidden />
-      {EMPTY.demo}
+      <span className="sr-only sm:not-sr-only">{EMPTY.demo}</span>
+      <span className="sm:hidden" aria-hidden="true">
+        Демо
+      </span>
     </Badge>
   );
 }
