@@ -17,7 +17,7 @@ services:
   migrate:
     image: migrate/migrate:v4.18.3
     networks: [cosmohack]
-    env_file: ${DATABASE_ENV_FILE:-./deploy/postgres/client.env}
+    env_file: ${DATABASE_ENV_FILE:-./deploy/postgres/client/.env}
     entrypoint: ["/bin/sh", "-ec"]
     command: ['exec migrate -path=/migrations -database "$$DATABASE_URL" up']
     volumes:
@@ -52,7 +52,7 @@ services:
     ports:
       - "${APP_BIND_ADDRESS:-0.0.0.0}:${APP_PORT:-8080}:8080/tcp"
     env_file:
-      - ${DATABASE_ENV_FILE:-./deploy/postgres/client.env}
+      - ${DATABASE_ENV_FILE:-./deploy/postgres/client/.env}
       - ${GO_ENV_FILE:-./deploy/go/.env}
     environment:
       ML_BASE_URL: http://ml:8000

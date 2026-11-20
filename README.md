@@ -97,8 +97,8 @@ cd cosmohack
 cp .env.compose.example .env.compose
 cp deploy/go/.env.example deploy/go/.env
 cp deploy/postgres/.env.example deploy/postgres/.env
-cp deploy/postgres/client.env.example deploy/postgres/client.env
-chmod 600 deploy/go/.env deploy/postgres/.env deploy/postgres/client.env
+cp deploy/postgres/client/.env.example deploy/postgres/client/.env
+chmod 600 deploy/go/.env deploy/postgres/.env deploy/postgres/client/.env
 ```
 
 В `deploy/go/.env` укажите OAuth Client ID и Client Secret. В двух файлах
