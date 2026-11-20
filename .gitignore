@@ -21,7 +21,13 @@ criterias.pdf
 .idea/
 .DS_Store
 
-# Локальное состояние деплоя: release.env содержит GHCR-токен.
+# Локальная конфигурация Compose и секреты сервисов.
+.env.compose
+deploy/**/.env
+deploy/**/client.env
+
+# Файлы прежнего деплоя могут содержать токены и пароли.
 deploy/release.env
+deploy/release-ghcr.env
 deploy/current-manifest.json
 deploy/previous-manifest.json

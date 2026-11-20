@@ -11,34 +11,12 @@ import (
 	"github.com/Benzocloud/cosmohack/backend/internal/domain"
 )
 
-// Error — ошибка вызова ML с кодом из контракта. Message безопасен для
-// пользователя и попадает в задачу; Err хранит техническую причину для логов.
-type Error struct {
-	Code      domain.MLErrorCode
-	Message   string
-	Retryable bool
-	Err       error
+func newError(code domain.MLErrorCode, message string) *domain.MLError {
+	return &domain.MLError{Code: code, Message: message}
 }
 
-func (e *Error) Error() string {
-	msg := e.Message
-	if msg == "" {
-		msg = "ml call failed"
-	}
-	if e.Err != nil {
-		return fmt.Sprintf("%s: %s: %v", e.Code, msg, e.Err)
-	}
-	return fmt.Sprintf("%s: %s", e.Code, msg)
-}
-
-func (e *Error) Unwrap() error { return e.Err }
-
-func newError(code domain.MLErrorCode, message string) *Error {
-	return &Error{Code: code, Message: message}
-}
-
-func wrapError(code domain.MLErrorCode, message string, err error) *Error {
-	return &Error{Code: code, Message: message, Err: err}
+func wrapError(code domain.MLErrorCode, message string, err error) *domain.MLError {
+	return &domain.MLError{Code: code, Message: message, Err: err}
 }
 
 // classifyTransportError различает отмену задачи, тайм-аут и недоступность.
@@ -47,7 +25,7 @@ func classifyTransportError(err error) error {
 	if errors.Is(err, context.Canceled) {
 		return err
 	}
-	timeoutErr := &Error{Code: domain.MLErrorTimeout, Message: "ml did not respond in time", Err: err}
+	timeoutErr := &domain.MLError{Code: domain.MLErrorTimeout, Message: "ml did not respond in time", Err: err}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return timeoutErr
 	}
@@ -55,7 +33,7 @@ func classifyTransportError(err error) error {
 	if errors.As(err, &netErr) && netErr.Timeout() {
 		return timeoutErr
 	}
-	return &Error{Code: domain.MLErrorUnavailable, Message: "ml is unreachable", Err: err}
+	return &domain.MLError{Code: domain.MLErrorUnavailable, Message: "ml is unreachable", Err: err}
 }
 
 // mlErrorRule — строка таблицы обработки ошибок HTTP-контракта.
@@ -96,7 +74,7 @@ type mlErrorResponse struct {
 // mapHTTPError переводит неуспешный ответ ML в ошибку контракта. Тело без
 // ожидаемого конверта, чужой request_id, неизвестный код или статус —
 // domain.MLErrorInvalidResponse.
-func mapHTTPError(status int, requestID string, body []byte) *Error {
+func mapHTTPError(status int, requestID string, body []byte) *domain.MLError {
 	var envelope mlErrorResponse
 	if err := json.Unmarshal(body, &envelope); err != nil {
 		return newError(domain.MLErrorInvalidResponse,
@@ -110,7 +88,7 @@ func mapHTTPError(status int, requestID string, body []byte) *Error {
 	}
 	for _, rule := range mlErrorRules {
 		if rule.status == status && rule.mlCode == envelope.Error.Code {
-			return &Error{
+			return &domain.MLError{
 				Code:      rule.goCode,
 				Message:   envelope.Error.Message,
 				Retryable: envelope.Error.Retryable,

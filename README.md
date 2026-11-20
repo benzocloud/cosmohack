@@ -48,7 +48,7 @@ flowchart LR
 | ML | Python 3.12, FastAPI, pandas, NumPy, scikit-learn HistGradientBoosting |
 | Хранилище | PostgreSQL 16, SQL-миграции через `migrate/migrate` |
 | Источники | CDSE Sentinel Hub Statistical API, Open-Meteo Archive API, OpenStreetMap Overpass API |
-| Доставка | Docker, Docker Compose, GitHub Actions, GHCR, self-hosted runner |
+| Доставка | Docker, Docker Compose, GitHub Actions, GHCR |
 
 ## Структура репозитория
 
@@ -69,8 +69,9 @@ flowchart LR
 │   ├── migrations/           forward/down SQL-миграции
 │   └── ml/                   Python ML-пакет, HTTP-сервис и тесты
 ├── artifacts/                зафиксированная модель и её manifest
-├── deploy/                   Compose, deployment и ML stub
-├── .github/workflows/        CI, публикация образов и deployment
+├── deploy/                   Шаблоны окружения сервисов и инструкция запуска
+├── docker-compose.yml        PostgreSQL, миграции, ML и Go
+├── .github/workflows/        CI и публикация образов
 ├── .agent/contracts/         версия HTTP-контракта Go ↔ ML
 └── Dockerfile                Go runtime со встроенным frontend
 ```
@@ -87,28 +88,29 @@ flowchart LR
 
 OAuth-клиент создаётся в настройках Sentinel Hub Dashboard. Официальная инструкция: [CDSE Sentinel Hub Authentication](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html#registering-oauth-client). Это именно отдельные **Client ID** и **Client Secret**, а не логин, account ID или пароль пользователя.
 
-### 1. Клонировать и задать credentials
+### 1. Клонировать и подготовить файлы окружения
 
 ```bash
 git clone https://github.com/Benzocloud/cosmohack.git
 cd cosmohack
 
-export CDSE_CLIENT_ID='ваш-client-id'
-export CDSE_CLIENT_SECRET='ваш-client-secret'
-export GO_IMAGE='cosmohack-go:local'
-export ML_IMAGE='cosmohack-ml:local'
-export MODEL_VERSION="$(sed -n 's/.*"model_version": *"\([^"]*\)".*/\1/p' backend/ml/model-manifest.json)"
+cp .env.compose.example .env.compose
+cp deploy/go/.env.example deploy/go/.env
+cp deploy/postgres/.env.example deploy/postgres/.env
+cp deploy/postgres/client.env.example deploy/postgres/client.env
+chmod 600 deploy/go/.env deploy/postgres/.env deploy/postgres/client.env
 ```
 
-Credentials нужны уже при старте Go-сервера. Они остаются в окружении процесса и не попадают во frontend, PostgreSQL или Git.
+В `deploy/go/.env` укажите OAuth Client ID и Client Secret. В двух файлах
+`deploy/postgres/` замените пароль-заглушку и согласуйте DSN по [инструкции деплоя](deploy/README.md).
 
 ### 2. Собрать два production-образа
 
 Команды выполняются из корня репозитория:
 
 ```bash
-docker build -t "$GO_IMAGE" -f Dockerfile .
-docker build -t "$ML_IMAGE" -f backend/ml/Dockerfile .
+docker build -t cosmohack-go:local .
+docker build -f backend/ml/Dockerfile -t cosmohack-ml:local .
 ```
 
 Первая сборка скачивает зависимости и может занять несколько минут. Обучение модели не запускается: образ получает проверенный артефакт `artifacts/restoration.pkl` и manifest из репозитория.
@@ -116,9 +118,9 @@ docker build -t "$ML_IMAGE" -f backend/ml/Dockerfile .
 ### 3. Поднять PostgreSQL, миграции, ML, Go и frontend
 
 ```bash
-cd deploy
-docker compose up -d --wait
-docker compose ps
+docker compose --env-file .env.compose config --quiet
+docker compose --env-file .env.compose up -d --wait
+docker compose --env-file .env.compose ps
 ```
 
 Откройте [http://localhost:8080](http://localhost:8080). Compose создаёт PostgreSQL volume, применяет `backend/migrations`, проверяет `/readyz` ML и только после этого запускает Go. Наружу опубликован только `${APP_PORT:-8080}`; PostgreSQL и ML доступны лишь внутри Compose-сети.
@@ -139,17 +141,13 @@ curl -fsS http://localhost:8080/api/areas
 
 `/readyz` Go проверяет соединение с PostgreSQL. Готовность ML проверяется Compose healthcheck и зависимостью запуска Go от healthy ML.
 
-### Остановка и чистый перезапуск
+### Остановка
 
 ```bash
-docker compose down
+docker compose --env-file .env.compose down
 ```
 
-Данные PostgreSQL при этом сохраняются. Чтобы удалить только локальные данные и начать с пустой базы:
-
-```bash
-docker compose down -v
-```
+Данные PostgreSQL остаются в томе `postgres-data`.
 
 ## Сценарии проверки через интерфейс
 
@@ -311,14 +309,9 @@ python -m pytest tests -q
 
 Workflow [.github/workflows/pipeline.yml](.github/workflows/pipeline.yml) на каждом push и pull request выполняет Go fmt/vet/race/lint/vulnerability checks, Python lint/tests, frontend typecheck/build, сборку обоих production-образов и контрактный smoke-тест Go ↔ ML.
 
-Push в `main` после зелёных проверок публикует immutable Go и ML images в GHCR. Поскольку `backend/ml/PRODUCTION_READY` присутствует, deployment использует настоящую модель. Self-hosted runner на целевой машине применяет миграции, проверяет manifest и readiness новой пары образов и возвращает предыдущую совместимую пару при неуспешном запуске.
-
-Для deployment job настроены:
-
-- repository variables: `DEPLOY_ENABLED=true`, при необходимости `DEPLOY_DIR`;
-- secrets: `GHCR_USER`, `GHCR_TOKEN` с `read:packages`, `DATABASE_URL`, `CDSE_CLIENT_ID`, `CDSE_CLIENT_SECRET`.
-
-Ручной production deployment выполняется только digest-образами через [deploy/deploy.sh](deploy/deploy.sh); скрипт документирует обязательные переменные в своей секции «Использование».
+Push в `main` после зелёных проверок публикует Go и ML образы в GHCR.
+В сводке job `publish` есть пара ссылок по digest для `.env.compose`.
+Выкладка выполняется вручную на хосте. См. [запуск и обновление Compose](deploy/README.md).
 
 ## Ограничения решения
 

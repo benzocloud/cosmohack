@@ -26,10 +26,10 @@ func fixture(t *testing.T, name string) []byte {
 	return data
 }
 
-// mustMLError проверяет, что ошибка — *ml.Error с ожидаемым кодом контракта.
-func mustMLError(t *testing.T, err error, want domain.MLErrorCode) *Error {
+// mustMLError проверяет, что ошибка — *domain.MLError с ожидаемым кодом контракта.
+func mustMLError(t *testing.T, err error, want domain.MLErrorCode) *domain.MLError {
 	t.Helper()
-	var mlErr *Error
+	var mlErr *domain.MLError
 	if !errors.As(err, &mlErr) || mlErr.Code != want {
 		t.Fatalf("want %s, got %v", want, err)
 	}

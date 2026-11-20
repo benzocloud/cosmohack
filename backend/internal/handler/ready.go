@@ -20,7 +20,7 @@ const readyStatus = "ready"
 
 // readyResponse — собственная готовность Go по контракту полей /readyz.
 // Публичный /readyz не вызывает ML: готовность ML проверяется отдельно
-// через service/ml.
+// через integration/ml.
 type readyResponse struct {
 	Status          string   `json:"status"`
 	SchemaVersion   string   `json:"schema_version"`

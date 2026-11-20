@@ -9,6 +9,11 @@ artifacts/*
 submission.csv
 reports
 deploy
+.env
+.env.*
+**/.env
+**/.env.*
+**/client.env
 README.md
 frontend/node_modules
 frontend/dist

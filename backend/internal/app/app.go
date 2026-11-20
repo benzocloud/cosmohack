@@ -17,10 +17,10 @@ import (
 	"github.com/Benzocloud/cosmohack/backend/internal/config"
 	domainsource "github.com/Benzocloud/cosmohack/backend/internal/domain/source"
 	"github.com/Benzocloud/cosmohack/backend/internal/handler"
+	"github.com/Benzocloud/cosmohack/backend/internal/integration/ml"
 	"github.com/Benzocloud/cosmohack/backend/internal/repository"
 	"github.com/Benzocloud/cosmohack/backend/internal/service/analysis"
 	"github.com/Benzocloud/cosmohack/backend/internal/service/area"
-	mlservice "github.com/Benzocloud/cosmohack/backend/internal/service/ml"
 	"github.com/Benzocloud/cosmohack/backend/internal/service/source/factory"
 )
 
@@ -37,10 +37,10 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return errors.New("logger is nil")
 	}
 
-	mlCfg := mlservice.DefaultConfig(cfg.ML.BaseURL)
+	mlCfg := ml.DefaultConfig(cfg.ML.BaseURL)
 	var err error
 	mlCfg.ExpectedModelVersion = cfg.ML.ExpectedModelVersion
-	client, err := mlservice.New(mlCfg)
+	client, err := ml.New(mlCfg)
 	if err != nil {
 		return fmt.Errorf("build ml client: %w", err)
 	}

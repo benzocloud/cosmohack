@@ -1,0 +1,70 @@
+name: cosmohack
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks: [cosmohack]
+    env_file: ${POSTGRES_ENV_FILE:-./deploy/postgres/.env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: migrate/migrate:v4.18.3
+    networks: [cosmohack]
+    env_file: ${DATABASE_ENV_FILE:-./deploy/postgres/client.env}
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ['exec migrate -path=/migrations -database "$$DATABASE_URL" up']
+    volumes:
+      - type: bind
+        source: ${MIGRATIONS_DIR_HOST:-./backend/migrations}
+        target: /migrations
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ml:
+    image: ${ML_IMAGE:-cosmohack-ml:local}
+    restart: unless-stopped
+    networks: [cosmohack]
+    environment:
+      MODEL_VERSION: ${MODEL_VERSION:?set MODEL_VERSION in .env.compose}
+      VEGETATION_ML_ENABLE_MULTISENSOR: ${VEGETATION_ML_ENABLE_MULTISENSOR:-true}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  go:
+    image: ${GO_IMAGE:-cosmohack-go:local}
+    restart: unless-stopped
+    networks: [cosmohack]
+    stop_grace_period: 15s
+    ports:
+      - "${APP_BIND_ADDRESS:-0.0.0.0}:${APP_PORT:-8080}:8080/tcp"
+    env_file:
+      - ${DATABASE_ENV_FILE:-./deploy/postgres/client.env}
+      - ${GO_ENV_FILE:-./deploy/go/.env}
+    environment:
+      ML_BASE_URL: http://ml:8000
+      ML_MODEL_VERSION: ${MODEL_VERSION:?set MODEL_VERSION in .env.compose}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      ml:
+        condition: service_healthy
+
+networks:
+  cosmohack:
+
+volumes:
+  postgres-data:

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Benzocloud/cosmohack/backend/internal/domain"
-	"github.com/Benzocloud/cosmohack/backend/internal/service/ml"
+	"github.com/Benzocloud/cosmohack/backend/internal/integration/ml"
 )
 
 const (

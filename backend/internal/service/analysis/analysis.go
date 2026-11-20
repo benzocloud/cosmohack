@@ -15,7 +15,6 @@ import (
 	"sync"
 
 	"github.com/Benzocloud/cosmohack/backend/internal/domain"
-	"github.com/Benzocloud/cosmohack/backend/internal/service/ml"
 )
 
 // ErrQueueFull — очередь ожидающих заполнена; повтор запуска явный.
@@ -48,7 +47,7 @@ type Persistence interface {
 	RecoverInterrupted(context.Context) error
 }
 
-// Analyzer — синхронный клиент ML; реализуется *ml.Client.
+// Analyzer выполняет анализ по собранным данным.
 type Analyzer interface {
 	Analyze(ctx context.Context, req *domain.AnalysisRequest) (*domain.AnalysisResult, error)
 }
@@ -284,7 +283,7 @@ func (e *Executor) failAnalyze(ctx context.Context, jobID string, err error) {
 		e.markCancelled(ctx, jobID)
 		return
 	}
-	var mlErr *ml.Error
+	var mlErr *domain.MLError
 	code := "ml_internal_error"
 	message := "ml returned an unexpected failure"
 	retryable := true
