@@ -13,7 +13,7 @@
 
 | Область | Проверка | Результат |
 |---|---|---|
-| Frontend | `GET /` | `200`, HTML TerraLens, ссылки на JS/CSS присутствуют |
+| Frontend | `GET /` | `200`, HTML лендинга, ссылки на JS/CSS присутствуют |
 | Go readiness | `GET /readyz` | `200`, `status=ready`, `schema_version=1.0`, профиль `ndvi-weather-v1` |
 | Areas API | `GET /api/areas` | `200`, после очистки `areas=[]` |
 | Runtime config | `GET /api/config` | `200`, лимиты площади/вершин/периода возвращаются |

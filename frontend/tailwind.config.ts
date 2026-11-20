@@ -2,7 +2,7 @@ import type { Config } from 'tailwindcss';
 import animate from 'tailwindcss-animate';
 
 /**
- * Дизайн-система AgroPulse (frontend-plan §2).
+ * Дизайн-система BenzoLens (frontend-plan §2).
  * Все цвета — ссылки на CSS-переменные из src/styles/tokens.css (§2.2 дословно),
  * значения не дублируются: источник истины один — токены.
  * Плюс канонические алиасы shadcn/ui (background/primary/...), маппящиеся на те же токены.

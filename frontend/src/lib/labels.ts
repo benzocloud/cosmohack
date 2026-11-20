@@ -102,6 +102,7 @@ export const MAP_LABELS = {
   searching: 'Ищем контуры…',
   retrySearch: 'Повторить поиск контуров',
   searchTooltip: 'Найти сельхозконтуры в текущей области карты',
+  searchAreaTooLarge: 'Приблизьте карту и повторите поиск контуров.',
   retryHint: 'Проверьте область и повторите запрос.',
   stale: 'Область изменилась — искать снова',
   contourSource: 'Контур OpenStreetMap',
@@ -162,7 +163,7 @@ export const AREA_LIST_LABELS = {
  * и aria-подписи. Не являются утверждённым словарём брифа; заменяются на этапах FE-1–FE-5.
  */
 export const SCAFFOLD = {
-  appTitle: 'TERRALENS',
+  appTitle: 'BenzoLens',
   appSubtitle: 'Аналитика полей',
   areasPanel: 'Участки',
   mapPanel: 'Карта',

@@ -1,4 +1,4 @@
-/* ═══ TerraLens · токены ═══ */
+/* ═══ BenzoLens · токены ═══ */
 :root {
   --bg: #04060c;
   --ink: rgba(255, 255, 255, 0.92);
@@ -65,9 +65,8 @@ body {
 }
 .site-header.is-hidden { opacity: 0; pointer-events: none; transform: translateY(-12px); }
 
-.brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; color: var(--ink); }
-.brand__mark { width: 34px; height: 34px; }
-.brand__name { font-size: 17px; font-weight: 400; letter-spacing: 0.34em; }
+.brand { display: inline-flex; }
+.brand__logo { display: block; height: auto; }
 
 .site-nav { display: flex; gap: clamp(18px, 2.6vw, 40px); position: absolute; left: 50%; translate: -50% 0; }
 .site-nav a {
@@ -386,8 +385,7 @@ body {
   align-items: center;
   justify-content: center;
 }
-.site-footer__logo { display: inline-flex; align-items: center; gap: 18px; color: rgba(255,255,255,.9); font-size: clamp(20px, 2vw, 30px); font-weight: 300; letter-spacing: .34em; }
-.site-footer__mark { width: clamp(44px, 4vw, 64px); height: clamp(44px, 4vw, 64px); }
+.site-footer__logo { width: clamp(180px, 22vw, 280px); height: auto; }
 .site-footer__title {
   font-size: clamp(24px, 2.6vw, 38px);
   font-weight: 300;

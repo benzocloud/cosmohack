@@ -1,4 +1,4 @@
-# Развёртывание TerraLens через Docker Compose
+# Развёртывание BenzoLens через Docker Compose
 
 Запускайте Compose из корня репозитория. PostgreSQL, миграции, ML и Go работают в выделенной сети `cosmohack`. На хост публикуется HTTP-порт Go. Go запускается после успешных миграций и прохождения ML-проверки `/readyz`.
 

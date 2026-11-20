@@ -1,4 +1,4 @@
-/* ═══ TerraLens hero · scroll-scrub движок ═══
+/* ═══ BenzoLens hero · scroll-scrub движок ═══
    Видео — подложка без UI; все интерфейсные слои включаются
    полосами прозрачности, привязанными к секундам мастер-ролика
    (тайм-карта разметки: sheet_1s / sheet_scan_zoom / sheet_final_zoom). */

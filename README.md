@@ -1,8 +1,10 @@
-# TerraLens
+# BenzoLens
 
-TerraLens — веб-система мониторинга вегетации сельскохозяйственных участков. Пользователь выбирает или рисует полигон на карте, задаёт период и получает восстановленный временной ряд NDVI, погодный контекст и оценку аномалий растительности.
+BenzoLens — веб-система мониторинга вегетации сельскохозяйственных участков. Пользователь выбирает или рисует полигон на карте, задаёт период и получает восстановленный временной ряд NDVI, погодный контекст и оценку аномалий растительности.
 
 **Рабочий стенд:** [http://benzomind.tech:8080](http://benzomind.tech:8080)
+
+[Логотип и правила использования](presentation/benzolens/BenzoLens/README.md)
 
 Решение состоит из React-интерфейса, Go API и фонового исполнителя, PostgreSQL и отдельного Python ML-сервиса. Браузер обращается только к Go по тому же origin; ключи внешних провайдеров и ML-сервис не публикуются во внешнюю сеть.
 
@@ -153,7 +155,7 @@ docker compose --env-file .env.compose down
 
 ### Готовый production-стенд
 
-1. Откройте [лендинг TerraLens](http://benzomind.tech:8080).
+1. Откройте [лендинг BenzoLens](http://benzomind.tech:8080).
 2. В блоке «Выберите участок» переключите примеры результатов и нажмите «Открыть панель».
 3. Убедитесь, что панель открыла и выделила выбранный участок.
 4. Нажмите «Повторить анализ» и следите за стадиями получения спутниковых данных, погоды, выполнения ML и сохранения результата.
@@ -233,9 +235,9 @@ curl -fsS "http://localhost:8080/api/areas/${AREA_ID}/events"
 Для полного набора Go-тестов нужна доступная PostgreSQL с применёнными миграциями. Проще всего поднять отдельную локальную базу:
 
 ```bash
-docker network create terralens-test
-docker run --rm -d --name terralens-test-postgres \
-  --network terralens-test \
+docker network create benzolens-test
+docker run --rm -d --name benzolens-test-postgres \
+  --network benzolens-test \
   -e POSTGRES_DB=cosmohack \
   -e POSTGRES_USER=cosmohack \
   -e POSTGRES_PASSWORD=cosmohack \
@@ -243,20 +245,20 @@ docker run --rm -d --name terralens-test-postgres \
   --health-interval=2s --health-retries=20 \
   -p 127.0.0.1:5432:5432 postgres:16-alpine
 
-until [ "$(docker inspect -f '{{.State.Health.Status}}' terralens-test-postgres)" = healthy ]; do sleep 1; done
+until [ "$(docker inspect -f '{{.State.Health.Status}}' benzolens-test-postgres)" = healthy ]; do sleep 1; done
 
-docker run --rm --network terralens-test \
+docker run --rm --network benzolens-test \
   -v "$PWD/backend/migrations:/migrations:ro" \
   migrate/migrate:v4.18.3 \
   -path=/migrations \
-  -database 'postgres://cosmohack:cosmohack@terralens-test-postgres:5432/cosmohack?sslmode=disable' up
+  -database 'postgres://cosmohack:cosmohack@benzolens-test-postgres:5432/cosmohack?sslmode=disable' up
 
 cd backend
 DATABASE_URL='postgres://cosmohack:cosmohack@127.0.0.1:5432/cosmohack?sslmode=disable' go test -race ./...
 go vet ./...
 ```
 
-После тестов удалите временную базу командами `docker rm -f terralens-test-postgres` и `docker network rm terralens-test`. В CI используется такой же PostgreSQL 16, а миграции применяются до тестов.
+После тестов удалите временную базу командами `docker rm -f benzolens-test-postgres` и `docker network rm benzolens-test`. В CI используется такой же PostgreSQL 16, а миграции применяются до тестов.
 
 ### Frontend
 

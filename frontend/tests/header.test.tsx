@@ -22,7 +22,7 @@ afterEach(() => {
 describe('Header', () => {
   it('показывает название приложения и пустое состояние участка', () => {
     renderHeader();
-    expect(screen.getByText(SCAFFOLD.appTitle)).toBeTruthy();
+    expect(screen.getByRole('img', { name: SCAFFOLD.appTitle })).toBeTruthy();
     expect(screen.getByText(SCAFFOLD.noAreaSelected)).toBeTruthy();
   });
 
