@@ -54,18 +54,6 @@ func validateGeometry(g domain.Polygon, lim Limits) error {
 		return errLimitExceeded
 	}
 
-	for i := range n {
-		for j := i + 1; j < n; j++ {
-			if adjacentRingEdges(i, j, n) {
-				continue
-			}
-
-			if segmentsIntersect(ring[i], ring[i+1], ring[j], ring[j+1]) {
-				return errInvalidGeometry
-			}
-		}
-	}
-
 	maxAreaKm2 := lim.AreaHaMax / 100
 	if maxAreaKm2 <= 0 {
 		maxAreaKm2 = lim.MaxAreaKm2
@@ -79,67 +67,6 @@ func validateGeometry(g domain.Polygon, lim Limits) error {
 	}
 
 	return nil
-}
-
-func adjacentRingEdges(i, j, n int) bool {
-	if j == i+1 {
-		return true
-	}
-
-	if i == 0 && j == n-1 {
-		return true
-	}
-
-	return false
-}
-
-func segmentsIntersect(a, b, c, d []float64) bool {
-	o1 := orient(a, b, c)
-	o2 := orient(a, b, d)
-	o3 := orient(c, d, a)
-
-	o4 := orient(c, d, b)
-	if o1 != o2 && o3 != o4 {
-		return true
-	}
-
-	if o1 == 0 && onSeg(a, b, c) {
-		return true
-	}
-
-	if o2 == 0 && onSeg(a, b, d) {
-		return true
-	}
-
-	if o3 == 0 && onSeg(c, d, a) {
-		return true
-	}
-
-	if o4 == 0 && onSeg(c, d, b) {
-		return true
-	}
-
-	return false
-}
-
-func orient(a, b, c []float64) int {
-	v := (b[1]-a[1])*(c[0]-b[0]) - (b[0]-a[0])*(c[1]-b[1])
-
-	const eps = 1e-12
-	if v > eps {
-		return 1
-	}
-
-	if v < -eps {
-		return -1
-	}
-
-	return 0
-}
-
-func onSeg(a, b, p []float64) bool {
-	return p[0] <= math.Max(a[0], b[0])+1e-12 && p[0] >= math.Min(a[0], b[0])-1e-12 &&
-		p[1] <= math.Max(a[1], b[1])+1e-12 && p[1] >= math.Min(a[1], b[1])-1e-12
 }
 
 func ringAreaKm2(ring [][]float64) float64 {

@@ -1,8 +1,9 @@
 import { useStartAnalysis } from '@/api/mutations';
-import { useAreas, useJob } from '@/api/queries';
+import { useAreas, useJob, useLimits } from '@/api/queries';
 import type { Verdict } from '@/api/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { analysisAreaError } from '@/lib/geo';
 import { jobStatusText } from '@/lib/job-status';
 import { AREA_LIST_LABELS, VERDICT_LABEL } from '@/lib/labels';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ const VERDICT_COLOR: Record<Verdict, string> = {
 export function AreaList() {
   const areasQuery = useAreas();
   const areas = areasQuery.data ?? [];
+  const limits = useLimits().data ?? null;
   const selectedAreaId = useSelection((s) => s.selectedAreaId);
   const pendingStart = useUi((s) => s.pendingStart);
   const setPendingStart = useUi((s) => s.setPendingStart);
@@ -47,6 +49,7 @@ export function AreaList() {
         const selected = area.id === selectedAreaId;
         const status = jobStatusText(area.activeJob);
         const needsManualStart = pendingStart?.areaId === area.id && !area.activeJob;
+        const areaError = needsManualStart ? analysisAreaError(area.geometry, limits) : null;
         return (
           <li
             key={area.id}
@@ -72,6 +75,7 @@ export function AreaList() {
               {area.activeJob && (
                 <span className={cn('text-2xs', status.className)}>{status.text}</span>
               )}
+              {areaError && <span className="text-2xs text-verdict-confirmed">{areaError}</span>}
             </button>
             {area.activeJob && <JobWatcher jobId={area.activeJob.id} />}
             {needsManualStart && (
@@ -79,7 +83,7 @@ export function AreaList() {
                 variant="link"
                 size="sm"
                 className="min-h-11 self-center px-2 text-2xs"
-                disabled={start.isPending}
+                disabled={start.isPending || !!areaError}
                 onClick={() => {
                   if (!pendingStart) return;
                   start.mutate(

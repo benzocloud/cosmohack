@@ -54,6 +54,15 @@ export function polygonAreaHa(ring: Ring): number {
   return turfArea(toPolygonGeometry(ring)) / 10_000;
 }
 
+export function analysisAreaError(geometry: GeoJSON.Polygon, limits: Limits | null) {
+  const minimum = limits?.areaHaMin;
+  if (minimum === undefined) return null;
+
+  const area = polygonAreaHa(geometry.coordinates[0] as Ring);
+  if (area >= minimum) return null;
+  return `Для анализа нужно не менее ${minimum.toLocaleString('ru-RU')} га. Увеличьте площадь контура.`;
+}
+
 export interface PolygonValidation {
   ok: boolean;
   error?: string;

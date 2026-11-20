@@ -1,10 +1,12 @@
 import { useStartAnalysis } from '@/api/mutations';
+import { useLimits } from '@/api/queries';
 import type { AnalysisEvent, Area, Series } from '@/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PreviewChart } from '@/features/dev/PreviewChart';
+import { analysisAreaError } from '@/lib/geo';
 import { jobStatusText } from '@/lib/job-status';
 import { EMPTY, EVENT_BLOCK_LABEL, PROVENANCE_LABEL, VERDICT_LABEL } from '@/lib/labels';
 
@@ -195,21 +197,23 @@ function AreaSummary({ area, result }: { area: Area; result: ResultData }) {
 
 function AnalysisAction({ area }: { area: Area }) {
   const start = useStartAnalysis();
+  const limits = useLimits().data ?? null;
   const period = area.period ?? area.lastResult?.period;
   if (!period || area.activeJob) return null;
+  const areaError = analysisAreaError(area.geometry, limits);
 
   return (
     <div className="px-5 pb-5">
       <Button
         size="sm"
-        disabled={start.isPending}
+        disabled={start.isPending || !!areaError}
         onClick={() => start.mutate({ areaId: area.id, period })}
       >
         {area.lastResult ? 'Повторить анализ' : 'Провести анализ'}
       </Button>
-      {start.isError && (
+      {(areaError || start.isError) && (
         <p className="mt-2 text-xs text-verdict-confirmed" role="alert">
-          Не удалось запустить анализ. Повторите попытку.
+          {areaError ?? 'Не удалось запустить анализ. Повторите попытку.'}
         </p>
       )}
     </div>

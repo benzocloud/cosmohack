@@ -3,7 +3,7 @@ import { useArea, useJob, useLimits } from '@/api/queries';
 import type { Period } from '@/api/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { validatePeriod } from '@/lib/geo';
+import { analysisAreaError, validatePeriod } from '@/lib/geo';
 import { jobStatusText } from '@/lib/job-status';
 import { SCAFFOLD } from '@/lib/labels';
 import { useSelection } from '@/store/selection';
@@ -43,8 +43,15 @@ export function Header() {
   const periodValidation = selectedPeriod
     ? validatePeriod(selectedPeriod.from, selectedPeriod.to, limitsQuery.data ?? null)
     : { ok: false };
+  const areaError = areaQuery.data
+    ? analysisAreaError(areaQuery.data.geometry, limitsQuery.data ?? null)
+    : null;
   const canRun = Boolean(
-    selectedAreaId && selectedPeriod?.from && selectedPeriod.to && periodValidation.ok,
+    selectedAreaId &&
+      selectedPeriod?.from &&
+      selectedPeriod.to &&
+      periodValidation.ok &&
+      !areaError,
   );
   const periodError =
     selectedAreaId && selectedPeriod?.from && selectedPeriod.to && !periodValidation.ok
@@ -132,12 +139,12 @@ export function Header() {
               : SCAFFOLD.runAnalysis}
         </Button>
       </div>
-      {(periodError || start.isError) && (
+      {(areaError || periodError || start.isError) && (
         <span
           role="alert"
           className="absolute right-3 top-full z-30 mt-1 rounded-md bg-surface px-3 py-2 text-2xs text-verdict-confirmed shadow-2"
         >
-          {periodError ?? 'Не удалось запустить анализ. Повторите попытку.'}
+          {areaError ?? periodError ?? 'Не удалось запустить анализ. Повторите попытку.'}
         </span>
       )}
     </header>

@@ -3,6 +3,7 @@ package handler
 import "net/http"
 
 type publicConfig struct {
+	AreaHaMin     float64 `json:"area_ha_min,omitempty"`
 	AreaHaMax     float64 `json:"area_ha_max"`
 	VerticesMax   int     `json:"vertices_max"`
 	PeriodDaysMax int     `json:"period_days_max"`
@@ -21,7 +22,7 @@ func (h *handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, publicConfig{
-		AreaHaMax: areaHaMax, VerticesMax: verticesMax,
+		AreaHaMin: h.limits.AreaHaMin, AreaHaMax: areaHaMax, VerticesMax: verticesMax,
 		PeriodDaysMax: h.limits.PeriodDaysMax, MinDate: h.limits.MinDate,
 	})
 }

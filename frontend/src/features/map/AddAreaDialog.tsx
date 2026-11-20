@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { polygonAreaHa, validatePeriod, validatePolygon } from '@/lib/geo';
+import { analysisAreaError, polygonAreaHa, validatePeriod, validatePolygon } from '@/lib/geo';
 import { DIALOG_LABELS, MAP_LABELS } from '@/lib/labels';
 import { useEffect, useState } from 'react';
 
@@ -80,6 +80,7 @@ export function AddAreaDialog({
   const pending = createMutation.isPending || startMutation.isPending;
   const areaHa = source ? polygonAreaHa(toRing(source.geometry)) : 0;
   const geometryCheck = source ? validatePolygon(toRing(source.geometry), limits) : null;
+  const areaError = source ? analysisAreaError(source.geometry, limits) : null;
 
   async function submit(andAnalyze: boolean) {
     if (!source) return;
@@ -205,9 +206,9 @@ export function AddAreaDialog({
               />
             </div>
 
-            {serverError && (
+            {(serverError || areaError) && (
               <p className="text-2xs text-verdict-confirmed" role="alert">
-                {serverError}
+                {serverError ?? areaError}
               </p>
             )}
           </div>
@@ -216,7 +217,7 @@ export function AddAreaDialog({
             <Button
               size="sm"
               className="min-h-11"
-              disabled={pending}
+              disabled={pending || !!areaError}
               onClick={() => void submit(true)}
             >
               {DIALOG_LABELS.addAndAnalyze}

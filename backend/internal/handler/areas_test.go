@@ -125,6 +125,24 @@ func TestTestdataFilesAreJSON(t *testing.T) {
 	}
 }
 
+func TestCreateAreaWithCloseVertices(t *testing.T) {
+	t.Parallel()
+	h, _ := newEnv(t, nil, nil)
+	body := []byte(`{
+		"name":"Участок",
+		"period":{"from":"2024-01-01","to":"2024-01-02"},
+		"source":{"kind":"drawn"},
+		"geometry":{"type":"Polygon","coordinates":[[
+			[0,0],[0.000001,0],[0.0000015,0],[0,0.0000015],
+			[-0.001,0.001],[-0.001,-0.001],[0,0]
+		]]}
+	}`)
+	w := doJSON(t, h, http.MethodPost, "/api/areas", body)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create %d %s", w.Code, w.Body.String())
+	}
+}
+
 func TestCRUDChain(t *testing.T) {
 	h, _ := newEnv(t, nil, nil)
 
@@ -230,7 +248,7 @@ func TestPublicConfig(t *testing.T) {
 	st := newTestStorage()
 	q := newStubQueue(8)
 	h := handler.NewMux(area.New(st), analysis.NewQueryService(st), analysis.NewScheduler(st, q), stubContours{}, q,
-		handler.Limits{AreaHaMax: 12.5, VerticesMax: 99, PeriodDaysMax: 30, MinDate: "2024-01-01"})
+		handler.Limits{AreaHaMin: 0.5, AreaHaMax: 12.5, VerticesMax: 99, PeriodDaysMax: 30, MinDate: "2024-01-01"})
 
 	w := doJSON(t, h, http.MethodGet, "/api/config", nil)
 	if w.Code != http.StatusOK {
@@ -238,6 +256,7 @@ func TestPublicConfig(t *testing.T) {
 	}
 
 	var got struct {
+		AreaHaMin     float64 `json:"area_ha_min"`
 		AreaHaMax     float64 `json:"area_ha_max"`
 		VerticesMax   int     `json:"vertices_max"`
 		PeriodDaysMax int     `json:"period_days_max"`
@@ -245,7 +264,7 @@ func TestPublicConfig(t *testing.T) {
 	}
 	decode(t, w, &got)
 
-	if got.AreaHaMax != 12.5 || got.VerticesMax != 99 || got.PeriodDaysMax != 30 || got.MinDate != "2024-01-01" {
+	if got.AreaHaMin != 0.5 || got.AreaHaMax != 12.5 || got.VerticesMax != 99 || got.PeriodDaysMax != 30 || got.MinDate != "2024-01-01" {
 		t.Fatalf("config=%s", w.Body.String())
 	}
 }

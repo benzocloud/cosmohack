@@ -5,6 +5,7 @@
  */
 
 export interface Limits {
+  areaHaMin?: number;
   areaHaMax: number;
   verticesMax: number;
   periodDaysMax?: number;
@@ -12,6 +13,7 @@ export interface Limits {
 }
 
 export interface LimitsRaw {
+  area_ha_min?: number;
   area_ha_max?: number;
   max_area_km2?: number;
   vertices_max?: number;
@@ -23,6 +25,7 @@ export interface LimitsRaw {
 
 function adaptLimitsObject(limits: LimitsRaw): Limits | null {
   const {
+    area_ha_min: areaHaMin,
     area_ha_max: areaHaMax,
     max_area_km2: maxAreaKm2,
     vertices_max: verticesMaxLegacy,
@@ -38,6 +41,7 @@ function adaptLimitsObject(limits: LimitsRaw): Limits | null {
     return null;
   }
   return {
+    ...(typeof areaHaMin === 'number' && areaHaMin > 0 ? { areaHaMin } : {}),
     areaHaMax: typeof areaHaMax === 'number' ? areaHaMax : (maxAreaKm2 as number) * 100,
     verticesMax:
       typeof verticesMaxLegacy === 'number' ? verticesMaxLegacy : (verticesMaxCanonical as number),

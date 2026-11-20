@@ -34,6 +34,7 @@ type bbox struct {
 
 type Limits struct {
 	// Канонические публичные лимиты повторяют конфигурацию сборки источников.
+	AreaHaMin     float64
 	AreaHaMax     float64
 	VerticesMax   int
 	PeriodDaysMax int

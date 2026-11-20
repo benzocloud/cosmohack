@@ -75,6 +75,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 
 	queue := &executorQueue{executor}
 	mux := handler.NewMux(area.New(storage), analysis.NewQueryService(storage), analysis.NewScheduler(storage, queue), b1ContourFinder{finder: sources.ContourFinder()}, queue, handler.Limits{
+		AreaHaMin:     sources.Limits().MinAreaHectares(),
 		AreaHaMax:     sources.Limits().MaxAreaHectares(),
 		VerticesMax:   sources.Limits().MaxPolygonVertices(),
 		PeriodDaysMax: sources.Limits().MaxPeriodDays(),
