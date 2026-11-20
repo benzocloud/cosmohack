@@ -1,6 +1,7 @@
 import type { Limits } from '@/api/adapters/limits';
 import {
   closePolygonGeometry,
+  drawEdgeIntersects,
   isSelfIntersecting,
   polygonAreaHa,
   toPolygonGeometry,
@@ -96,6 +97,54 @@ describe('isSelfIntersecting', () => {
         [0, 0.001],
       ]),
     ).toBe(false);
+  });
+});
+
+describe('drawEdgeIntersects', () => {
+  const draft = square.slice(0, 3);
+
+  it('отклоняет пересечение, касание, повтор и наложение на соседнее ребро', () => {
+    expect(drawEdgeIntersects(draft, [-0.001, -0.001])).toBe(true);
+    expect(drawEdgeIntersects(draft, [0.0005, 0])).toBe(true);
+    expect(drawEdgeIntersects(draft, draft[0])).toBe(true);
+    expect(drawEdgeIntersects(draft, [0.001, 0.0005])).toBe(true);
+    expect(drawEdgeIntersects(draft, draft[2])).toBe(true);
+    expect(drawEdgeIntersects(draft, [0.001, 0.002])).toBe(false);
+  });
+
+  it('учитывает допуск на касание ребра в проекции', () => {
+    const point: [number, number] = [0.0005, 0.00001];
+    expect(drawEdgeIntersects(draft, point)).toBe(false);
+    expect(drawEdgeIntersects(draft, point, false, 0.00002)).toBe(true);
+  });
+
+  it('проверяет замыкание отдельно от добавления вершины', () => {
+    const outerPoint: [number, number] = [0.002, 0.0005];
+    expect(drawEdgeIntersects(draft, outerPoint)).toBe(false);
+    expect(drawEdgeIntersects([...draft, outerPoint], draft[0], true)).toBe(true);
+    expect(drawEdgeIntersects(square, square[0], true)).toBe(false);
+    expect(
+      drawEdgeIntersects(
+        [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+        ],
+        [0, 0],
+        true,
+      ),
+    ).toBe(true);
+  });
+
+  it('обнаруживает касание при замыкании с погрешностью проекции', () => {
+    const projected: [number, number][] = [
+      [0, 0],
+      [0.014, 0.007 - 1e-13],
+      [0.028, 0],
+      [0.028, 0.014],
+    ];
+    expect(drawEdgeIntersects(projected, projected[0], true)).toBe(false);
+    expect(drawEdgeIntersects(projected, projected[0], true, 1e-12)).toBe(true);
   });
 });
 

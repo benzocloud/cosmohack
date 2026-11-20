@@ -11,7 +11,15 @@ import { useAreas, useContours, useLimits } from '@/api/queries';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cssVar } from '@/lib/chart-theme';
-import { polygonAreaHa, validatePolygon } from '@/lib/geo';
+import {
+  type Ring,
+  type Vertex,
+  drawEdgeIntersects,
+  polygonAreaHa,
+  toPolygonGeometry,
+  validatePolygon,
+} from '@/lib/geo';
+import { MAP_LABELS } from '@/lib/labels';
 import { useDraft } from '@/store/draft';
 import { selectionActions, useSelection } from '@/store/selection';
 import { useUi } from '@/store/ui';
@@ -20,6 +28,7 @@ import { AddAreaDialog, type AddAreaSource } from './AddAreaDialog';
 import { BasemapSwitcher } from './BasemapSwitcher';
 import { ContourPopover, type ContourPopoverState } from './ContourPopover';
 import { ContoursButton } from './ContoursButton';
+import { DrawPreview } from './DrawPreview';
 import { DrawToolbar } from './DrawToolbar';
 import { MapEmptyHint } from './MapEmptyHint';
 import { MapLegend } from './MapLegend';
@@ -32,14 +41,13 @@ import {
   readLastMapView,
   saveLastMapView,
 } from './map-style';
-import { type Ring, useTerraDraw } from './useTerraDraw';
 
 /**
- * Карта (frontend-plan §8): подложка + векторные полигоны, terra-draw для рисования,
+ * Карта (frontend-plan §8): подложка + векторные полигоны и черновик участка,
  * никакой растровой статистики NDVI без подтверждённого источника.
  *
  * Порядок слоёв: contours-fill → contours-line → areas-fill → areas-line →
- * areas-line-none → selected-halo → selected-line → слои terra-draw.
+ * areas-line-none → selected-halo → selected-line → слои черновика.
  * Цвет полигона = итог сохранённого lastResult за подписанный период; перекраска
  * по выбранной дате графика не делается (бриф §3C).
  *
@@ -49,6 +57,11 @@ import { type Ring, useTerraDraw } from './useTerraDraw';
 // Цвета статусов — из токенов §2.2; альфа заливки 0.22 ≈ 0x38 в 8-значном hex
 const VERDICT_FILL_ALPHA = '38';
 const hex = (name: string, fallback: string) => cssVar(name, fallback).replace('#', '');
+
+function mercatorVertex(vertex: Vertex): Vertex {
+  const { x, y } = maplibregl.MercatorCoordinate.fromLngLat(vertex);
+  return [x, y];
+}
 
 const verdictColorExpr = (alpha: string): ExpressionSpecification => [
   'match',
@@ -72,6 +85,7 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
   const vertices = useDraft((s) => s.vertices);
   const setVertices = useDraft((s) => s.setVertices);
   const cancelDrawing = useDraft((s) => s.cancelDrawing);
+  const finishedGeometry = useDraft((s) => s.finishedGeometry);
   const setFinishedGeometry = useDraft((s) => s.setFinishedGeometry);
   const selectedAreaId = useSelection((s) => s.selectedAreaId);
   const selectionSource = useSelection((s) => s.selectionSource);
@@ -94,43 +108,33 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
   const [contourPopover, setContourPopover] = useState<ContourPopoverState | null>(null);
   const [addSource, setAddSource] = useState<AddAreaSource | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [drawWarning, setDrawWarning] = useState<string | null>(null);
+  const [hoverVertex, setHoverVertex] = useState<Vertex | null>(null);
+  const [rejectedVertex, setRejectedVertex] = useState<Vertex | null>(null);
 
-  const drawing = drawMode === 'drawing';
+  const drawing = drawMode === 'drawing' && !finishedGeometry;
   // В моке стартуем над фикстурными контурами; иначе — сохранённый вид/Ростов-на-Дону
   const initialView = useMemo(
     () => (demoMode ? MOCK_MAP_VIEW : (readLastMapView() ?? DEFAULT_MAP_VIEW)),
     [demoMode],
   );
 
-  // --- черновик и terra-draw ---
-  const handleFinish = (ring: Ring) => {
-    setFinishedGeometry({ type: 'Polygon', coordinates: [[...ring, ring[0]]] });
-  };
-  const draw = useTerraDraw({
-    map: mapInstance,
-    basemap,
-    drawing,
-    onVerticesChange: setVertices,
-    onFinish: handleFinish,
-    onIncomplete: () =>
-      setDrawWarning(
-        'Контур не замкнут. Вернитесь к началу линии и соедините её перед отпусканием.',
-      ),
-  });
+  const resetDrawPreview = useCallback(() => {
+    setHoverVertex(null);
+    setRejectedVertex(null);
+  }, []);
+  const stopDrawing = useCallback(() => {
+    resetDrawPreview();
+    cancelDrawing();
+  }, [cancelDrawing, resetDrawPreview]);
 
-  // Esc отменяет рисование (бриф §3A: завершение и отмена доступны)
   useEffect(() => {
     if (!drawing) return undefined;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        draw.clear();
-        cancelDrawing();
-      }
+      if (event.key === 'Escape') stopDrawing();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [drawing, draw, cancelDrawing]);
+  }, [drawing, stopDrawing]);
 
   // Выбор из списка → fitBounds; выбор кликом по карте — без подлёта (бриф §3C)
   const prevSelected = useRef<string | null>(null);
@@ -175,12 +179,10 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
   };
 
   const startDrawing = useCallback(() => {
-    setDrawWarning(null);
+    resetDrawPreview();
     setContourPopover(null);
-    // стартуем «чисто»: предыдущий черновик не восстанавливаем
-    draw.clear();
     useDraft.getState().startDrawing();
-  }, [draw]);
+  }, [resetDrawPreview]);
 
   const lastDrawRequest = useRef(0);
   useEffect(() => {
@@ -190,7 +192,6 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
   }, [drawRequest, startDrawing]);
 
   // Завершённый черновик → диалог добавления
-  const finishedGeometry = useDraft((s) => s.finishedGeometry);
   useEffect(() => {
     if (!finishedGeometry) return;
     setAddSource({ kind: 'drawn', label: 'Нарисован вручную', geometry: finishedGeometry });
@@ -211,9 +212,7 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
 
   const closeAddDialog = () => {
     setAddOpen(false);
-    // чертёжные фичи больше не нужны: участок рендерится отдельным слоем
-    draw.clear();
-    useDraft.getState().cancelDrawing();
+    stopDrawing();
   };
 
   const handleSaved = (
@@ -229,43 +228,47 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
     selectionActions.selectArea(area.id, 'list');
   };
 
-  const validationVertices: Ring = vertices;
   const limits = useLimits().data ?? null;
-  const validation = useMemo(
-    () => validatePolygon(validationVertices, limits),
-    [validationVertices, limits],
+  const projectedVertices = useMemo(() => vertices.map(mercatorVertex), [vertices]);
+  const closingBlocked = useMemo(
+    () =>
+      vertices.length >= 3 &&
+      (drawEdgeIntersects(vertices, vertices[0], true) ||
+        // Учитываем погрешность преобразования координат, независимо от масштаба.
+        drawEdgeIntersects(projectedVertices, projectedVertices[0], true, 1e-12)),
+    [vertices, projectedVertices],
   );
-
-  // В рисовании жест принадлежит TerraDraw, в обычном режиме карта сохраняет
-  // панорамирование одним пальцем и нативный pinch-to-zoom.
-  useEffect(() => {
-    if (!mapInstance) return undefined;
-    const canvasContainer = mapInstance.getCanvasContainer();
-    const canvas = mapInstance.getCanvas();
-    const preventNativeDrag = (event: Event) => event.preventDefault();
-
-    if (drawing) {
-      canvasContainer.style.touchAction = 'none';
-      canvas.style.touchAction = 'none';
-      canvas.style.userSelect = 'none';
-      canvas.style.setProperty('-webkit-user-select', 'none');
-      canvas.style.setProperty('-webkit-user-drag', 'none');
-      canvas.addEventListener('dragstart', preventNativeDrag);
-      canvas.addEventListener('selectstart', preventNativeDrag);
-    } else {
-      canvasContainer.style.removeProperty('touch-action');
+  const validation = useMemo(
+    () =>
+      closingBlocked
+        ? { ok: false, error: MAP_LABELS.closingIntersection }
+        : validatePolygon(vertices, limits),
+    [closingBlocked, vertices, limits],
+  );
+  const isClosing = (point: Vertex) => point === vertices[0];
+  const edgeBlocked = (point: Vertex) => {
+    // Один пиксель в нормализованных координатах Web Mercator.
+    const tolerance = 1 / (512 * 2 ** (mapInstance?.getZoom() ?? initialView.zoom));
+    return (
+      drawEdgeIntersects(vertices, point) ||
+      drawEdgeIntersects(projectedVertices, mercatorVertex(point), false, tolerance)
+    );
+  };
+  const drawTarget = (event: maplibregl.MapMouseEvent): Vertex => {
+    const coordinates: Vertex = [event.lngLat.lng, event.lngLat.lat];
+    if (vertices.length < 3) return coordinates;
+    const first = event.target.project(vertices[0]);
+    const hitRadius =
+      'pointerType' in event.originalEvent && event.originalEvent.pointerType === 'touch' ? 18 : 10;
+    return first.dist(event.point) <= hitRadius ? vertices[0] : coordinates;
+  };
+  const finishDrawing = () => {
+    if (validation.ok) {
+      resetDrawPreview();
+      setFinishedGeometry(toPolygonGeometry(vertices));
     }
-
-    return () => {
-      canvas.removeEventListener('dragstart', preventNativeDrag);
-      canvas.removeEventListener('selectstart', preventNativeDrag);
-      canvasContainer.style.removeProperty('touch-action');
-      canvas.style.removeProperty('touch-action');
-      canvas.style.removeProperty('user-select');
-      canvas.style.removeProperty('-webkit-user-select');
-      canvas.style.removeProperty('-webkit-user-drag');
-    };
-  }, [drawing, mapInstance]);
+  };
+  const previewVertex = hoverVertex ?? rejectedVertex;
 
   const areasFC = useMemo(
     () => ({
@@ -308,16 +311,14 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
         mapStyle={mapStyle}
         initialViewState={initialView}
         style={{ width: '100%', height: '100%' }}
-        // Во время рисования жест карты отключён, чтобы палец не двигал карту
-        // вместо построения полигона.
-        dragPan={!drawing}
-        touchZoomRotate={!drawing}
-        scrollZoom={!drawing}
+        cursor={
+          drawing ? (hoverVertex && isClosing(hoverVertex) ? 'pointer' : 'crosshair') : undefined
+        }
         doubleClickZoom={!drawing}
         onWheel={(event) => {
           const wheel = event.originalEvent;
           // Горизонтальный жест двигает карту на любой платформе, Ctrl+wheel масштабирует.
-          if (drawing || wheel.ctrlKey || wheel.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return;
+          if (wheel.ctrlKey || wheel.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return;
           if (!wheel.deltaX && (!wheel.deltaY || !navigator.platform.startsWith('Mac'))) return;
 
           event.preventDefault();
@@ -340,8 +341,22 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
           saveLastMapView({ longitude, latitude, zoom });
           if (bbox) setStale(true);
         }}
+        onMouseMove={drawing ? (event) => setHoverVertex(drawTarget(event)) : undefined}
+        onMouseOut={drawing ? () => setHoverVertex(null) : undefined}
+        onMoveStart={drawing ? () => setHoverVertex(null) : undefined}
         onClick={(event) => {
-          if (drawing) return; // клики в режиме рисования обрабатывает terra-draw
+          if (drawing) {
+            const point = drawTarget(event);
+            if (isClosing(point)) {
+              finishDrawing();
+            } else if (edgeBlocked(point)) {
+              setRejectedVertex(point);
+            } else if (!limits || vertices.length < limits.verticesMax) {
+              setVertices([...vertices, point]);
+              resetDrawPreview();
+            }
+            return;
+          }
           const areasFeatures = event.target.queryRenderedFeatures(event.point, {
             layers: ['areas-fill'],
           });
@@ -423,6 +438,19 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
             paint={{ 'line-color': cssVar('--area-selected-outline', '#151A21'), 'line-width': 3 }}
           />
         </Source>
+
+        {(drawing || finishedGeometry) && (
+          <DrawPreview
+            vertices={vertices}
+            finishedGeometry={finishedGeometry}
+            closingBlocked={closingBlocked}
+            preview={
+              previewVertex && !isClosing(previewVertex)
+                ? { point: previewVertex, blocked: edgeBlocked(previewVertex) }
+                : null
+            }
+          />
+        )}
       </MapGL>
 
       {/* Управление поиском/рисованием — 44px цели */}
@@ -438,22 +466,24 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
         />
       </div>
 
-      <div className="absolute bottom-4 right-4 z-20">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-12 rounded-full border-border bg-action-soft text-ink shadow-1 hover:bg-surface-hover"
-              aria-label="Отметить свою зону"
-              onClick={startDrawing}
-            >
-              <PenLine aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Отметить свою зону на карте</TooltipContent>
-        </Tooltip>
-      </div>
+      {!drawing && (
+        <div className="absolute bottom-4 right-4 z-20">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-12 rounded-full border-border bg-action-soft text-ink shadow-1 hover:bg-surface-hover"
+                aria-label="Отметить свою зону"
+                onClick={startDrawing}
+              >
+                <PenLine aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Отметить свою зону на карте</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
 
       <div className="absolute right-3 top-3 z-10">
         <BasemapSwitcher />
@@ -466,11 +496,15 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
       {drawing && (
         <DrawToolbar
           validation={validation}
-          warning={drawWarning}
-          onCancel={() => {
-            draw.clear();
-            cancelDrawing();
+          vertexCount={vertices.length}
+          vertexLimitReached={limits !== null && vertices.length === limits.verticesMax}
+          warning={rejectedVertex ? MAP_LABELS.edgeIntersection : null}
+          onUndo={() => {
+            setVertices(vertices.slice(0, -1));
+            resetDrawPreview();
           }}
+          onFinish={finishDrawing}
+          onCancel={stopDrawing}
         />
       )}
 

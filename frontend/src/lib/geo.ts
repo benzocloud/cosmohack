@@ -12,7 +12,67 @@ import { MAP_LABELS } from '@/lib/labels';
  * Серверная проверка остаётся окончательной (бриф §3A).
  */
 
-export type Ring = [number, number][];
+export type Vertex = [number, number];
+export type Ring = Vertex[];
+
+function turn(a: Vertex, b: Vertex, c: Vertex): number {
+  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+}
+
+function onSegment(a: Vertex, b: Vertex, point: Vertex, cross: number, tolerance: number): boolean {
+  return (
+    point[0] >= Math.min(a[0], b[0]) - tolerance &&
+    point[0] <= Math.max(a[0], b[0]) + tolerance &&
+    point[1] >= Math.min(a[1], b[1]) - tolerance &&
+    point[1] <= Math.max(a[1], b[1]) + tolerance &&
+    Math.abs(cross) <= tolerance * Math.hypot(b[0] - a[0], b[1] - a[1])
+  );
+}
+
+function segmentsIntersect(a: Vertex, b: Vertex, c: Vertex, d: Vertex, tolerance: number): boolean {
+  const abc = turn(a, b, c);
+  const abd = turn(a, b, d);
+  const cda = turn(c, d, a);
+  const cdb = turn(c, d, b);
+  return (
+    (abc * abd < 0 && cda * cdb < 0) ||
+    onSegment(a, b, c, abc, tolerance) ||
+    onSegment(a, b, d, abd, tolerance) ||
+    onSegment(c, d, a, cda, tolerance) ||
+    onSegment(c, d, b, cdb, tolerance)
+  );
+}
+
+function edgesOverlap(shared: Vertex, a: Vertex, b: Vertex, tolerance: number): boolean {
+  const cross = turn(shared, a, b);
+  return onSegment(shared, a, b, cross, tolerance) || onSegment(shared, b, a, cross, tolerance);
+}
+
+/** Сравнивает добавляемое ребро с открытой цепочкой; замыкание проверяется отдельно. */
+export function drawEdgeIntersects(
+  ring: Ring,
+  to: Vertex,
+  closing = false,
+  tolerance = 0,
+): boolean {
+  const last = ring.length - 1;
+  if (last < 0) return false;
+  const from = ring[last];
+  if (Math.hypot(from[0] - to[0], from[1] - to[1]) <= tolerance) return true;
+
+  for (let i = 0; i < last; i++) {
+    const a = ring[i];
+    const b = ring[i + 1];
+    if (i === last - 1) {
+      if (edgesOverlap(from, a, to, tolerance)) return true;
+    } else if (closing && i === 0) {
+      if (edgesOverlap(to, b, from, tolerance)) return true;
+    } else if (segmentsIntersect(from, to, a, b, tolerance)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /** Замкнутый GeoJSON-полигон из незамкнутого набора вершин. */
 export function toPolygonGeometry(ring: Ring): GeoJSON.Polygon {

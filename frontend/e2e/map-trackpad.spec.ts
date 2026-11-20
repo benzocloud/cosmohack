@@ -32,18 +32,28 @@ for (const platform of ['MacIntel', 'Win32', 'Linux x86_64']) {
 
     await page.getByRole('button', { name: 'Отметить свою зону' }).click();
     await canvas.dispatchEvent('wheel', { deltaX: 60, deltaY: 40, deltaMode: 0 });
-    expect(await view()).toEqual(panned);
+    const drawingView = await view();
+    expect(drawingView.lng).toBeGreaterThan(panned.lng);
+    expect(drawingView.lat).toBeLessThan(panned.lat);
+    expect(drawingView.zoom).toBe(panned.zoom);
+    await canvas.dispatchEvent('wheel', { ctrlKey: true, deltaY: -40, deltaMode: 0 });
+    await expect.poll(async () => (await view()).zoom).toBeGreaterThan(drawingView.zoom);
+    await expect(page.getByText('Вершин: 0')).toBeVisible();
+    await page.waitForFunction(
+      () => !(globalThis as typeof globalThis & { __agroMap: MapLibreMap }).__agroMap.isMoving(),
+    );
+    const zoomedView = await view();
     await page.keyboard.press('Escape');
 
     if (platform === 'MacIntel') {
       await canvas.dispatchEvent('wheel', { deltaY: 40, deltaMode: 0 });
       const scrolled = await view();
-      expect(scrolled.lat).toBeLessThan(panned.lat);
-      expect(scrolled.zoom).toBe(panned.zoom);
+      expect(scrolled.lat).toBeLessThan(zoomedView.lat);
+      expect(scrolled.zoom).toBe(zoomedView.zoom);
       await canvas.dispatchEvent('wheel', { ctrlKey: true, deltaY: -40, deltaMode: 0 });
     } else {
       await canvas.dispatchEvent('wheel', { deltaY: -40, deltaMode: 0 });
     }
-    await expect.poll(async () => (await view()).zoom).toBeGreaterThan(panned.zoom);
+    await expect.poll(async () => (await view()).zoom).toBeGreaterThan(zoomedView.zoom);
   });
 }
