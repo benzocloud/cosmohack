@@ -309,6 +309,16 @@ export function MapView({ variant = 'desktop' }: { variant?: 'desktop' | 'mobile
         touchZoomRotate={!drawing}
         scrollZoom={!drawing}
         doubleClickZoom={!drawing}
+        onWheel={(event) => {
+          const wheel = event.originalEvent;
+          // Горизонтальный жест двигает карту на любой платформе, Ctrl+wheel масштабирует.
+          if (drawing || wheel.ctrlKey || wheel.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return;
+          if (!wheel.deltaX && (!wheel.deltaY || !navigator.platform.startsWith('Mac'))) return;
+
+          event.preventDefault();
+          wheel.preventDefault();
+          event.target.panBy([wheel.deltaX, wheel.deltaY], { duration: 0 });
+        }}
         attributionControl={false}
         onLoad={(event) => {
           if (import.meta.env.DEV) {
